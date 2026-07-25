@@ -1,0 +1,52 @@
+@startuml TestCase_Authoring_Sequence
+title Test Case Authoring Sequence
+
+skinparam sequenceMessageAlign center
+skinparam shadowing false
+autonumber
+
+actor Client
+participant "gateway-service" as Gateway
+participant "TestCaseController\nadmin-service" as Controller
+participant "CreateTestCaseUseCase /\nUpdateTestCaseUseCase" as UseCase
+participant "TestCase aggregate\nshared-domain" as TestCase
+participant "TestCaseRepositoryAdapter" as RepositoryAdapter
+database "PostgreSQL" as PostgreSQL
+participant "KafkaEventPublisher" as EventPublisher
+queue "Kafka" as Kafka
+
+Client -> Gateway : POST /api/admin/api/v1/test-case\nor PUT /api/admin/api/v1/test-case/{id}
+Gateway -> Controller : /api/v1/test-case
+Controller -> UseCase : execute(command)
+
+alt create test case
+  UseCase -> TestCase : TestCase.create(...)
+  loop Gherkin steps in request
+    UseCase -> TestCase : addStep(GherkinStep)
+  end
+  loop parameters/tags in request
+    UseCase -> TestCase : addParameter(...)\naddTag(...)
+  end
+else update test case
+  UseCase -> RepositoryAdapter : findById(id)
+  RepositoryAdapter -> PostgreSQL : load TestCaseJpaEntity\nsteps, parameters, tags
+  PostgreSQL --> RepositoryAdapter : entity graph
+  RepositoryAdapter --> UseCase : reconstituted TestCase
+  UseCase -> TestCase : replaceSteps(...)\nupdateDescription(...)\nadd/remove tags
+end
+
+UseCase -> RepositoryAdapter : save(TestCase)
+RepositoryAdapter -> PostgreSQL : persist test_cases,\ntest_steps, test_parameters, tags
+RepositoryAdapter --> UseCase : saved TestCase
+
+UseCase -> EventPublisher : publish TestCaseCreatedEvent\nor TestCaseUpdatedEvent
+EventPublisher -> Kafka : test.case.created\nor test.case.updated
+UseCase --> Controller : TestCaseResponse
+Controller --> Client : 201 Created / 200 OK
+
+note right of TestCase
+  GherkinStep is an immutable value object.
+  TestCase enforces unique step orderIndex.
+end note
+
+@enduml

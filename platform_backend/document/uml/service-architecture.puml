@@ -1,0 +1,71 @@
+@startuml Service_Architecture
+title Automation Testing Platform - Service Architecture
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+
+actor "Frontend / API Client" as client
+
+node "gateway-service\nSpring Cloud Gateway\n:8080" as gateway
+node "admin-service\nSpring Boot\n:8081" as admin
+node "engine-service\nVert.x\n:8082" as engine
+node "report-service\nKtor / Kotlin\n:8083" as report
+
+database "PostgreSQL" as postgres
+queue "Kafka" as kafka
+database "Redis" as redis
+database "Elasticsearch" as elastic
+
+package "Shared modules" {
+  component "shared-domain\nAggregates / Value Objects" as sharedDomain
+  component "shared-event\nKafka event contracts" as sharedEvent
+  component "shared-infrastructure\nJSON / Flyway helpers" as sharedInfra
+}
+
+client --> gateway : HTTP / SSE
+
+gateway --> admin : /api/admin/**\nStripPrefix=2
+gateway --> engine : /api/engine/**\nStripPrefix=2
+gateway --> report : /api/reports/**\nStripPrefix=2
+
+admin --> postgres : CRUD projects, suites, cases, runs
+admin --> kafka : publish execution requests\nand admin lifecycle events
+admin --> redis : cache page-object data
+
+engine --> kafka : consume execution requests\npublish execution results
+engine --> redis : write live execution state\nread page-object cache
+
+report --> kafka : consume execution result events
+report --> redis : read live execution state\nfor SSE
+report --> elastic : index/search reports,\nsummary, trend, flaky tests
+
+admin ..> sharedDomain
+admin ..> sharedEvent
+admin ..> sharedInfra
+engine ..> sharedDomain
+engine ..> sharedEvent
+engine ..> sharedInfra
+report ..> sharedEvent
+
+note right of kafka
+  Topic names found in code:
+
+  shared-event KafkaTopic:
+  - test.execution.request
+  - test.run.started
+  - test.run.completed
+  - test.case.started
+  - test.case.completed
+  - test.step.completed
+
+  engine-service current defaults:
+  - consumes test-execution.requested
+  - publishes test-execution.started
+  - publishes test-step.completed
+  - publishes test-execution.completed
+
+  Consider aligning these names before production.
+end note
+
+@enduml

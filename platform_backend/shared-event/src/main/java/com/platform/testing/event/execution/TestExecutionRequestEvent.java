@@ -3,7 +3,6 @@ package com.platform.testing.event.execution;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.platform.testing.domain.constant.Priority;
 import com.platform.testing.domain.constant.TestType;
-import com.platform.testing.domain.device.DeviceProfile;
 
 import java.time.Instant;
 
@@ -17,7 +16,6 @@ public record TestExecutionRequestEvent(
         String testCaseId,
         String testSuiteId,
         String environmentId,
-        DeviceProfile deviceProfile,
         String executionTargetId,
         String triggeredBy,
         TestType testType,

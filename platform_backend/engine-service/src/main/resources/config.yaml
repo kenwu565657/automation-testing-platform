@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+kafka:
+  bootstrap:
+    servers: "localhost:9092"
+  group:
+    id: "engine-service"
+  topics:
+    execution-requested: "test-execution.requested"
+    execution-started: "test-execution.started"
+    step-completed: "test-step.completed"
+    execution-completed: "test-execution.completed"
+
+redis:
+  connection: "redis://localhost:6379"
+  page-object-cache:
+    ttl-seconds: 3600
+  execution-state:
+    ttl-seconds: 86400
+
+engine:
+  worker-pool-size: 8
+  default-step-timeout-seconds: 30
+  screenshot-on-failure: true

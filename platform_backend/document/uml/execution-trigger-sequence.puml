@@ -1,0 +1,69 @@
+@startuml Execution_Trigger_Sequence
+title Test Execution Trigger - End-to-End Sequence
+
+skinparam sequenceMessageAlign center
+skinparam shadowing false
+autonumber
+
+actor Client
+participant "gateway-service\nSpring Cloud Gateway" as Gateway
+participant "ExecutionController\nadmin-service" as ExecutionController
+participant "TriggerExecutionUseCase" as TriggerUseCase
+database "PostgreSQL\nRepositories" as PostgreSQL
+queue "Kafka" as Kafka
+participant "ExecutionConsumerVerticle\nengine-service" as Consumer
+participant "ExecutionWorkerVerticle" as Worker
+participant "ExecutionOrchestrator" as Orchestrator
+database "Redis" as Redis
+participant "Report KafkaConsumerService\nreport-service" as ReportConsumer
+database "Elasticsearch" as Elasticsearch
+
+Client -> Gateway : POST /api/admin/api/v1/execution/trigger
+Gateway -> ExecutionController : POST /api/v1/execution/trigger
+ExecutionController -> TriggerUseCase : execute(TriggerExecutionCommand)
+
+TriggerUseCase -> PostgreSQL : find TestSuite by id
+PostgreSQL --> TriggerUseCase : TestSuite(testCaseIds)
+TriggerUseCase -> PostgreSQL : create TestRun(status=QUEUED)
+
+loop each testCaseId in suite
+  TriggerUseCase -> PostgreSQL : find TestCase by id
+  PostgreSQL --> TriggerUseCase : TestCase metadata
+  TriggerUseCase -> Kafka : publish TestExecutionRequestEvent
+end
+
+ExecutionController --> Client : 202 Accepted\n{runId,status=QUEUED}
+
+Kafka -> Consumer : consume execution request
+Consumer -> Worker : Event Bus request\nengine.execute(payload)
+Worker -> Orchestrator : execute(payload)
+
+Orchestrator -> Orchestrator : select engine by testType\ncreate driver by device profile
+Orchestrator -> Redis : save state RUNNING
+Orchestrator -> Kafka : publish EXECUTION_STARTED
+
+loop each scenario step
+  Orchestrator -> Orchestrator : resolve page object/context\nexecute step
+  Orchestrator -> Redis : save current step state
+  Orchestrator -> Kafka : publish STEP_COMPLETED
+end
+
+alt all steps passed
+  Orchestrator -> Redis : save final state PASSED
+  Orchestrator -> Kafka : publish EXECUTION_COMPLETED(status=PASSED)
+else step or driver failed
+  Orchestrator -> Redis : save final state FAILED/ABORTED
+  Orchestrator -> Kafka : publish EXECUTION_COMPLETED(status=FAILED/ABORTED)
+end
+
+Kafka -> ReportConsumer : consume execution completed event
+ReportConsumer -> Elasticsearch : index TestReport
+
+note over Kafka
+  Current code shows a topic naming mismatch:
+  admin publishes shared-event topic "test.execution.request",
+  while engine default consumes "test-execution.requested".
+  Configure engine kafka.topics.execution-requested or align constants.
+end note
+
+@enduml

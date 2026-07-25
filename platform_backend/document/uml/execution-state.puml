@@ -1,0 +1,58 @@
+@startuml Execution_State_Model
+title Execution State Model
+
+skinparam shadowing false
+
+state "TestRun aggregate\nshared-domain" as TestRun {
+  [*] --> QUEUED : TestRun.create()
+  QUEUED --> RUNNING : markRunning()
+  RUNNING --> PASSED : complete()\nno failed/error case result
+  RUNNING --> FAILED : complete()\nany case FAILED/ERROR
+  QUEUED --> CANCELLED : cancel()
+  RUNNING --> CANCELLED : cancel()
+  PASSED --> [*]
+  FAILED --> [*]
+  CANCELLED --> [*]
+}
+
+state "TestCaseResult entity\nshared-domain" as TestCaseResult {
+  [*] --> TC_QUEUED : create()
+  TC_QUEUED --> TC_RUNNING : execution begins\n(currently implicit)
+  TC_RUNNING --> TC_PASSED : complete(PASSED, null)
+  TC_RUNNING --> TC_FAILED : complete(FAILED, error)
+  TC_RUNNING --> TC_ERROR : complete(ERROR, error)
+  TC_QUEUED --> TC_SKIPPED : complete(SKIPPED, reason)
+  TC_PASSED --> [*]
+  TC_FAILED --> [*]
+  TC_ERROR --> [*]
+  TC_SKIPPED --> [*]
+}
+
+state "Engine live execution\nengine-service + Redis" as EngineExecution {
+  [*] --> RECEIVED : Kafka message consumed
+  RECEIVED --> DRIVER_CREATING : DriverFactoryRegistry.createDriver(device)
+  DRIVER_CREATING --> RUNNING : execution.start()\nsave Redis state\npublish EXECUTION_STARTED
+  RUNNING --> STEP_RUNNING : next step
+  STEP_RUNNING --> RUNNING : step PASSED\nrecord result\nsave Redis state\npublish STEP_COMPLETED
+  STEP_RUNNING --> ABORTING : step FAILED\nor exception
+  RUNNING --> COMPLETING : no more steps
+  COMPLETING --> PASSED : execution.complete()\nsave Redis state\npublish EXECUTION_COMPLETED
+  ABORTING --> ABORTED : execution.abort(error)\nclose driver\nsave Redis state\npublish EXECUTION_COMPLETED
+  PASSED --> [*]
+  ABORTED --> [*]
+}
+
+note right of TestRun
+  RunStatus enum currently contains:
+  QUEUED, RUNNING, PASSED, FAILED,
+  ERROR, SKIPPED, CANCELLED.
+end note
+
+note right of EngineExecution
+  report-service LiveExecutionTracker treats
+  PASSED, FAILED, and ABORTED as terminal.
+  ABORTED appears in engine/report flow but not
+  in shared-domain RunStatus.
+end note
+
+@enduml

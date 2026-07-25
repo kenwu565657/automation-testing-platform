@@ -1,0 +1,55 @@
+@startuml Kafka_Topic_Flow
+title Kafka Topic Flow and Naming Alignment
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+
+component "admin-service" as Admin
+component "engine-service" as Engine
+component "report-service" as Report
+
+package "shared-event expected topics" as SharedTopics {
+  queue "test.execution.request" as ExpectedExecutionRequest
+  queue "test.run.started" as ExpectedRunStarted
+  queue "test.run.completed" as ExpectedRunCompleted
+  queue "test.case.started" as ExpectedCaseStarted
+  queue "test.case.completed" as ExpectedCaseCompleted
+  queue "test.step.completed" as ExpectedStepCompleted
+  queue "test.case.created" as TestCaseCreated
+  queue "test.case.updated" as TestCaseUpdated
+}
+
+package "engine/report current topics" as CurrentTopics {
+  queue "test-execution.requested" as CurrentExecutionRequested
+  queue "test-execution.started" as CurrentExecutionStarted
+  queue "test-step.completed" as CurrentStepCompleted
+  queue "test-execution.completed" as CurrentExecutionCompleted
+}
+
+Admin --> ExpectedExecutionRequest : ExecutionRequestProducer\nKafkaTopic.TEST_EXECUTION_REQUEST
+Admin --> TestCaseCreated : KafkaEventPublisher\ncreate lifecycle event
+Admin --> TestCaseUpdated : KafkaEventPublisher\nupdate lifecycle event
+
+CurrentExecutionRequested --> Engine : ExecutionConsumerVerticle\ndefault config fallback
+Engine --> CurrentExecutionStarted : KafkaProducerManager\nEXECUTION_STARTED
+Engine --> CurrentStepCompleted : KafkaProducerManager\nSTEP_COMPLETED
+Engine --> CurrentExecutionCompleted : KafkaProducerManager\nEXECUTION_COMPLETED
+
+CurrentExecutionStarted --> Report : KafkaConsumerService\ndefault topic list
+CurrentStepCompleted --> Report : KafkaConsumerService\ndefault topic list
+CurrentExecutionCompleted --> Report : KafkaConsumerService\ndefault topic list
+
+ExpectedExecutionRequest -[#red,dashed]-> CurrentExecutionRequested : naming mismatch
+ExpectedRunStarted -[#red,dashed]-> CurrentExecutionStarted : naming mismatch
+ExpectedStepCompleted -[#red,dashed]-> CurrentStepCompleted : naming mismatch
+ExpectedRunCompleted -[#red,dashed]-> CurrentExecutionCompleted : naming mismatch
+
+note bottom
+  Recommendation:
+  Make shared-event KafkaTopic the single source of truth in all services,
+  or configure every service to use the same names.
+  Otherwise admin may publish to a topic the engine never consumes.
+end note
+
+@enduml

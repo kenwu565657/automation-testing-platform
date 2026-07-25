@@ -1,0 +1,27 @@
+ktor:
+  application:
+    modules:
+      - com.testing.platform.ReportApplicationKt.module
+  deployment:
+    port: 8082
+    host: 0.0.0.0
+
+elasticsearch:
+  host: "localhost"
+  port: 9200
+  scheme: "http"
+  indices:
+    reports: "test-reports"
+    reports-pattern: "test-reports-*"
+
+kafka:
+  bootstrap-servers: "localhost:9092"
+  group-id: "report-service"
+  topics:
+    execution-started: "test-execution.started"
+    step-completed: "test-step.completed"
+    execution-completed: "test-execution.completed"
+
+redis:
+  url: "redis://localhost:6379"
+

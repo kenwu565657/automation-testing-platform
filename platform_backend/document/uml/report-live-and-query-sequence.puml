@@ -1,0 +1,64 @@
+@startuml Report_Live_And_Query_Sequence
+title Report Service - Live SSE and Report Query Sequence
+
+skinparam sequenceMessageAlign center
+skinparam shadowing false
+autonumber
+
+actor Client
+participant "gateway-service" as Gateway
+participant "SseRoute\nreport-service" as SseRoute
+participant "LiveExecutionTracker" as LiveTracker
+database "Redis\nexecution:state:{id}" as Redis
+participant "ReportRoute\nreport-service" as ReportRoute
+participant "ReportAggregationService" as ReportService
+database "Elasticsearch" as Elasticsearch
+
+== Live execution tracking ==
+
+Client -> Gateway : GET /api/reports/api/v1/executions/{executionId}/live?interval=1000
+Gateway -> SseRoute : GET /api/v1/executions/{executionId}/live
+SseRoute -> LiveTracker : track(executionId, intervalMs)
+
+loop until terminal status
+  LiveTracker -> Redis : get execution:state:{executionId}
+  alt state exists
+    Redis --> LiveTracker : state JSON
+    LiveTracker --> SseRoute : emit state JSON
+    SseRoute --> Client : SSE event execution-state
+  else no state
+    LiveTracker --> SseRoute : {status: NOT_FOUND}
+    SseRoute --> Client : SSE event execution-state
+  end
+end
+
+SseRoute --> Client : SSE event complete
+
+note right of LiveTracker
+  Terminal statuses in current code:
+  PASSED, FAILED, ABORTED.
+end note
+
+== Historical report query ==
+
+Client -> Gateway : GET /api/reports/api/v1/reports/{executionId}
+Gateway -> ReportRoute : GET /api/v1/reports/{executionId}
+ReportRoute -> ReportService : getReport(executionId)
+ReportService -> Elasticsearch : findByExecutionId(executionId)
+Elasticsearch --> ReportService : TestReport / null
+alt found
+  ReportRoute --> Client : 200 TestReport
+else not found
+  ReportRoute --> Client : 404 Report not found
+end
+
+== Search / analytics endpoints ==
+
+Client -> Gateway : GET /api/reports/api/v1/reports/search?...\nGET /api/reports/api/v1/summary?...\nGET /api/reports/api/v1/trends/{testCaseId}\nGET /api/reports/api/v1/flaky-tests?...
+Gateway -> ReportRoute : forwarded route
+ReportRoute -> ReportService : search / getSummary / trend lookup
+ReportService -> Elasticsearch : query indices
+Elasticsearch --> ReportService : result set / aggregation
+ReportRoute --> Client : JSON response
+
+@enduml
