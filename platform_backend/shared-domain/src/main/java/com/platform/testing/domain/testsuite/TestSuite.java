@@ -1,15 +1,18 @@
 package com.platform.testing.domain.testsuite;
 
+import com.platform.testing.domain.testcase.valueobject.TestCaseId;
+import com.platform.testing.domain.testsuite.valueobject.TestSuiteId;
 import com.platform.testing.domain.common.AggregateRoot;
-import com.platform.testing.domain.project.ProjectId;
-import com.platform.testing.domain.testcase.TestCaseId;
-import java.time.LocalDateTime;
+import com.platform.testing.domain.project.valueobject.ProjectId;
+import com.platform.testing.utils.TimeUtils;
+
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class TestSuite implements AggregateRoot {
+public class TestSuite implements AggregateRoot<TestSuiteId> {
 
     private final TestSuiteId id;
     private String name;
@@ -17,8 +20,8 @@ public class TestSuite implements AggregateRoot {
     private ProjectId projectId;
     private final List<TestCaseId> testCaseIds;
     private boolean active;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static TestSuite create(String name, String description, ProjectId projectId) {
         return new TestSuite(TestSuiteId.generate(), name, description, projectId);
@@ -26,7 +29,7 @@ public class TestSuite implements AggregateRoot {
 
     public static TestSuite reconstitute(TestSuiteId id, String name, String description,
                                          ProjectId projectId, List<TestCaseId> testCaseIds,
-                                         boolean active, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                         boolean active, Instant createdAt, Instant updatedAt) {
         TestSuite ts = new TestSuite(id, name, description, projectId);
         ts.testCaseIds.addAll(testCaseIds);
         ts.active = active;
@@ -42,7 +45,7 @@ public class TestSuite implements AggregateRoot {
         this.projectId = Objects.requireNonNull(projectId);
         this.testCaseIds = new ArrayList<>();
         this.active = true;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = TimeUtils.now();
         this.updatedAt = this.createdAt;
     }
 
@@ -51,17 +54,21 @@ public class TestSuite implements AggregateRoot {
             throw new IllegalArgumentException("TestCase already in suite: " + testCaseId.value());
         }
         testCaseIds.add(testCaseId);
-        this.updatedAt = LocalDateTime.now();
+        touch();
     }
 
     public void removeTestCase(TestCaseId testCaseId) {
         testCaseIds.remove(testCaseId);
-        this.updatedAt = LocalDateTime.now();
+        touch();
     }
 
     public void deactivate() {
         this.active = false;
-        this.updatedAt = LocalDateTime.now();
+        touch();
+    }
+
+    private void touch() {
+        this.updatedAt = TimeUtils.now();
     }
 
     public TestSuiteId getId() {
@@ -88,11 +95,11 @@ public class TestSuite implements AggregateRoot {
         return active;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Instant getUpdatedAt() {
         return updatedAt;
     }
 }

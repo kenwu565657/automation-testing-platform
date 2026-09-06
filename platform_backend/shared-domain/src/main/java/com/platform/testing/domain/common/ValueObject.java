@@ -1,4 +1,5 @@
 package com.platform.testing.domain.common;
 
-public interface ValueObject {
+public interface ValueObject<T> {
+    T value();
 }

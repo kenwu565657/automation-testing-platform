@@ -1,4 +1,5 @@
 package com.platform.testing.domain.common;
 
-public interface DomainEntity {
+public interface DomainEntity<ID> {
+    ID getId();
 }

@@ -1,23 +1,26 @@
 package com.platform.testing.domain.project;
 
 import com.platform.testing.domain.common.AggregateRoot;
-import java.time.LocalDateTime;
+import com.platform.testing.domain.project.valueobject.ProjectId;
+import com.platform.testing.utils.TimeUtils;
+
+import java.time.Instant;
 import java.util.Objects;
 
-public class Project implements AggregateRoot {
+public class Project implements AggregateRoot<ProjectId> {
     private final ProjectId id;
     private String name;
-    private String description;
+    private final String description;
     private boolean active;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static Project create(String name, String description) {
         return new Project(ProjectId.generate(), name, description);
     }
 
     public static Project reconstitute(ProjectId id, String name, String description,
-                                       boolean active, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                       boolean active, Instant createdAt, Instant updatedAt) {
         Project p = new Project(id, name, description);
         p.active = active;
         p.createdAt = createdAt;
@@ -30,24 +33,28 @@ public class Project implements AggregateRoot {
         this.name = Objects.requireNonNull(name);
         this.description = description;
         this.active = true;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = TimeUtils.now();
         this.updatedAt = this.createdAt;
     }
 
     public void rename(String newName) {
         this.name = Objects.requireNonNull(newName);
-        this.updatedAt = LocalDateTime.now();
+        touch();
     }
 
     public void deactivate() {
         this.active = false;
-        this.updatedAt = LocalDateTime.now();
+        touch();
+    }
+
+    private void touch() {
+        this.updatedAt = TimeUtils.now();
     }
 
     public ProjectId getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
     public boolean isActive() { return active; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

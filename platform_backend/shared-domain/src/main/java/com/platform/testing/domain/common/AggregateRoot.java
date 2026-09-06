@@ -1,4 +1,5 @@
 package com.platform.testing.domain.common;
 
-public interface AggregateRoot {
+public interface AggregateRoot<ID> {
+    ID getId();
 }

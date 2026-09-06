@@ -1,37 +1,45 @@
 package com.platform.testing.domain.execution;
 
+import com.platform.testing.domain.testsuite.valueobject.TestSuiteId;
 import com.platform.testing.domain.common.AggregateRoot;
-import com.platform.testing.domain.constant.RunStatus;
-import com.platform.testing.domain.environment.EnvironmentId;
-import com.platform.testing.domain.testsuite.TestSuiteId;
+import com.platform.testing.domain.environment.valueobject.EnvironmentId;
+import com.platform.testing.domain.execution.entity.TestCaseResult;
+import com.platform.testing.domain.execution.valueobject.RunStatus;
+import com.platform.testing.domain.execution.valueobject.TestRunId;
+import com.platform.testing.domain.execution.valueobject.TriggerKind;
+import com.platform.testing.domain.target.valueobject.ExecutionTargetId;
+import com.platform.testing.domain.user.valueobject.UserId;
+import com.platform.testing.utils.TimeUtils;
+
 import java.time.Instant;
 import java.util.*;
 
-public class TestRun implements AggregateRoot {
+public class TestRun implements AggregateRoot<TestRunId> {
 
     private final TestRunId id;
     private final TestSuiteId testSuiteId;
     private final ExecutionTargetId executionTargetId;
     private final EnvironmentId environmentId;
     private RunStatus status;
-    private String triggeredBy;
+    private final TriggerKind triggerKind;
+    private final UserId triggeredBy;
     private Instant startedAt;
     private Instant completedAt;
     private long durationMs;
     private final List<TestCaseResult> caseResults;
 
     public static TestRun create(TestSuiteId testSuiteId, ExecutionTargetId executionTargetId,
-                                 EnvironmentId environmentId, String triggeredBy) {
+                                 EnvironmentId environmentId, TriggerKind triggerKind, UserId triggeredBy) {
         return new TestRun(TestRunId.generate(), testSuiteId, executionTargetId,
-                environmentId, triggeredBy);
+                environmentId, triggerKind, triggeredBy);
     }
 
     public static TestRun reconstitute(TestRunId id, TestSuiteId testSuiteId,
                                        ExecutionTargetId executionTargetId, EnvironmentId environmentId,
-                                       RunStatus status, String triggeredBy, Instant startedAt,
-                                       Instant completedAt, long durationMs,
+                                       RunStatus status, TriggerKind triggerKind, UserId triggeredBy,
+                                       Instant startedAt, Instant completedAt, long durationMs,
                                        List<TestCaseResult> caseResults) {
-        TestRun tr = new TestRun(id, testSuiteId, executionTargetId, environmentId, triggeredBy);
+        TestRun tr = new TestRun(id, testSuiteId, executionTargetId, environmentId, triggerKind, triggeredBy);
         tr.status = status;
         tr.startedAt = startedAt;
         tr.completedAt = completedAt;
@@ -41,14 +49,15 @@ public class TestRun implements AggregateRoot {
     }
 
     private TestRun(TestRunId id, TestSuiteId testSuiteId, ExecutionTargetId executionTargetId,
-                    EnvironmentId environmentId, String triggeredBy) {
+                    EnvironmentId environmentId, TriggerKind triggerKind, UserId triggeredBy) {
         this.id = Objects.requireNonNull(id);
         this.testSuiteId = Objects.requireNonNull(testSuiteId);
         this.executionTargetId = Objects.requireNonNull(executionTargetId);
         this.environmentId = Objects.requireNonNull(environmentId);
-        this.triggeredBy = triggeredBy;
+        this.triggerKind = triggerKind != null ? triggerKind : TriggerKind.MANUAL;
+        this.triggeredBy = Objects.requireNonNull(triggeredBy, "triggeredBy is required");
         this.status = RunStatus.QUEUED;
-        this.startedAt = Instant.now();
+        this.startedAt = TimeUtils.now();
         this.caseResults = new ArrayList<>();
     }
 
@@ -64,13 +73,13 @@ public class TestRun implements AggregateRoot {
         boolean anyFailed = caseResults.stream()
                 .anyMatch(r -> r.getStatus() == RunStatus.FAILED || r.getStatus() == RunStatus.ERROR);
         this.status = anyFailed ? RunStatus.FAILED : RunStatus.PASSED;
-        this.completedAt = Instant.now();
+        this.completedAt = TimeUtils.now();
         this.durationMs = completedAt.toEpochMilli() - startedAt.toEpochMilli();
     }
 
     public void cancel() {
         this.status = RunStatus.CANCELLED;
-        this.completedAt = Instant.now();
+        this.completedAt = TimeUtils.now();
     }
 
     // ── Query ──
@@ -84,7 +93,8 @@ public class TestRun implements AggregateRoot {
     public ExecutionTargetId getExecutionTargetId() { return executionTargetId; }
     public EnvironmentId getEnvironmentId() { return environmentId; }
     public RunStatus getStatus() { return status; }
-    public String getTriggeredBy() { return triggeredBy; }
+    public TriggerKind getTriggerKind() { return triggerKind; }
+    public UserId getTriggeredBy() { return triggeredBy; }
     public Instant getStartedAt() { return startedAt; }
     public Instant getCompletedAt() { return completedAt; }
     public long getDurationMs() { return durationMs; }

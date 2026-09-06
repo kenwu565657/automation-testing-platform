@@ -4,11 +4,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.jakarta.persistence.api)
-    api(libs.jakarta.validation.api)
-
-    // Jackson (runtime — this module provides actual serializers)
-    api(libs.jackson.databind)
-    api(libs.jackson.annotations)
-    api(libs.jackson.datatype.jsr310)
+    implementation(project(":shared-utils"))
+    testImplementation(libs.junit.jupiter)
 }
