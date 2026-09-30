@@ -9,7 +9,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.platform.testing"
+    group = "com.valdifly"
     version = "0.1.0-SNAPSHOT"
     repositories {
         mavenCentral()
