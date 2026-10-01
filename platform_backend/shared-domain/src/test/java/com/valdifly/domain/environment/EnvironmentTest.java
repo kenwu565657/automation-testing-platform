@@ -15,17 +15,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EnvironmentTest {
 
     @Test
-    void variablesAndBaseUrl() {
-        Environment env = Environment.create("staging", "https://stg.example", ProjectId.generate());
+    void variables() {
+        Environment env = Environment.create("staging", ProjectId.generate());
         env.setVariable("token", "abc");
         env.setVariable("token", "xyz");
         assertEquals("xyz", env.getVariables().get("token"));
 
         env.removeVariable("token");
         assertTrue(env.getVariables().isEmpty());
-
-        env.updateBaseUrl("https://stg2.example");
-        assertEquals("https://stg2.example", env.getBaseUrl());
 
         env.deactivate();
         assertFalse(env.isActive());
@@ -37,7 +34,7 @@ class EnvironmentTest {
     @Test
     void reconstituteCopiesVariables() {
         Environment env = Environment.reconstitute(
-                EnvironmentId.generate(), "prod", "https://prod.example",
+                EnvironmentId.generate(), "prod",
                 ProjectId.generate(), Map.of("k", "v"), true,
                 Instant.parse("2026-01-01T00:00:00Z"),
                 Instant.parse("2026-01-01T00:00:00Z")
