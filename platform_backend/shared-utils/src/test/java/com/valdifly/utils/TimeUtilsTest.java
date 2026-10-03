@@ -1,11 +1,10 @@
-package com.platform.testing.utils;
+package com.valdifly.utils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,6 +22,5 @@ class TimeUtilsTest {
         TimeUtils.useClock(Clock.fixed(fixed, ZoneOffset.UTC));
 
         assertEquals(fixed, TimeUtils.now());
-        assertEquals(LocalDateTime.of(2026, 1, 1, 0, 0), TimeUtils.nowDateTime());
     }
 }

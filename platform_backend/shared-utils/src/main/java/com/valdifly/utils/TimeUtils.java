@@ -1,9 +1,7 @@
-package com.platform.testing.utils;
+package com.valdifly.utils;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 /**
@@ -17,10 +15,6 @@ public final class TimeUtils {
 
     public static Instant now() {
         return Instant.now(clock);
-    }
-
-    public static LocalDateTime nowDateTime() {
-        return LocalDateTime.ofInstant(now(), ZoneOffset.UTC);
     }
 
     /** Test hook. Pair with {@link #reset()}. */
