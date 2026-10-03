@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     api(project(":shared-domain"))
-    api(project(":shared-event"))
+    api(project(":shared-utils"))
 
     // Jackson (runtime — this module provides actual serializers)
     api(libs.jackson.databind)

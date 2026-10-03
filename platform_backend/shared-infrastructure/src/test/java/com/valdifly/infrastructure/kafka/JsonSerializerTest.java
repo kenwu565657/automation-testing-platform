@@ -1,4 +1,4 @@
-package com.platform.testing.infrastructure.kafka;
+package com.valdifly.infrastructure.kafka;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

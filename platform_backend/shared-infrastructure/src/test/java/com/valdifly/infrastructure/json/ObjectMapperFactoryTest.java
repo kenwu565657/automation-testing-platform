@@ -1,6 +1,15 @@
-package com.platform.testing.infrastructure.json;
+package com.valdifly.infrastructure.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.valdifly.domain.common.Priority;
+import com.valdifly.domain.environment.valueobject.EnvironmentId;
+import com.valdifly.domain.execution.event.TestExecutionRequestEvent;
+import com.valdifly.domain.execution.valueobject.TestRunId;
+import com.valdifly.domain.target.valueobject.ExecutionTargetId;
+import com.valdifly.domain.testcase.valueobject.TestCaseId;
+import com.valdifly.domain.testcase.valueobject.TestType;
+import com.valdifly.domain.testsuite.valueobject.TestSuiteId;
+import com.valdifly.domain.user.valueobject.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -47,6 +56,27 @@ class ObjectMapperFactoryTest {
 
         assertEquals(timestamp, deserialized.getTimestamp());
         assertEquals("value", deserialized.getCamelCaseField());
+    }
+
+    @Test
+    void valueObjectsStayFlatStringsOnTheWire() throws Exception {
+        ObjectMapper mapper = ObjectMapperFactory.getInstance();
+        TestExecutionRequestEvent event = new TestExecutionRequestEvent(
+                TestRunId.of("run-1"), TestCaseId.of("case-1"), TestSuiteId.of("suite-1"),
+                EnvironmentId.of("env-1"), ExecutionTargetId.of("target-1"), UserId.of("qa"),
+                TestType.API, Priority.HIGH, 30, 1, 1, Instant.parse("2026-01-01T00:00:00Z")
+        );
+
+        String json = mapper.writeValueAsString(event);
+        assertTrue(json.contains("\"runId\":\"run-1\""));
+        assertTrue(json.contains("\"testCaseId\":\"case-1\""));
+        assertTrue(json.contains("\"triggeredBy\":\"qa\""));
+        assertFalse(json.contains("\"value\""));
+
+        TestExecutionRequestEvent restored = mapper.readValue(json, TestExecutionRequestEvent.class);
+        assertEquals(event.runId(), restored.runId());
+        assertEquals(event.testCaseId(), restored.testCaseId());
+        assertEquals(event.triggeredBy(), restored.triggeredBy());
     }
 
     static class TestClass {

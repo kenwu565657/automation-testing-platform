@@ -1,4 +1,4 @@
-package com.platform.testing.infrastructure.json;
+package com.valdifly.infrastructure.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -41,6 +41,7 @@ public final class ObjectMapperFactory {
     private static ObjectMapper configure(ObjectMapper mapper) {
         // Java 8+ time support (Instant, LocalDateTime, etc.)
         mapper.registerModule(new JavaTimeModule());
+        mapper.registerModule(new ValueObjectModule());
 
         // Write Instant as ISO-8601 string, not numeric timestamp
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
