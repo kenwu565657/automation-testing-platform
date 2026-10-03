@@ -21,7 +21,12 @@ class EnvironmentTest {
         env.setVariable("token", "xyz");
         assertEquals("xyz", env.getVariables().get("token"));
 
+        env.setVariable(" padded ", "kept");
+        assertEquals("kept", env.getVariables().get("padded"));
+        assertTrue(env.getVariables().containsKey("padded"));
+
         env.removeVariable("token");
+        env.removeVariable("padded");
         assertTrue(env.getVariables().isEmpty());
 
         env.deactivate();
@@ -29,6 +34,13 @@ class EnvironmentTest {
         env.activate();
         assertTrue(env.isActive());
         assertThrows(UnsupportedOperationException.class, () -> env.getVariables().put("x", "y"));
+    }
+
+    @Test
+    void rejectsBlankVariableKey() {
+        Environment env = Environment.create("staging", ProjectId.generate());
+        assertThrows(NullPointerException.class, () -> env.setVariable(null, "x"));
+        assertThrows(IllegalArgumentException.class, () -> env.setVariable("   ", "x"));
     }
 
     @Test

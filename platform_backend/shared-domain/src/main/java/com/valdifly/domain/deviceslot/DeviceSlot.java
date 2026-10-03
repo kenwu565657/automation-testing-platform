@@ -1,6 +1,7 @@
 package com.valdifly.domain.deviceslot;
 
 import com.valdifly.domain.common.AggregateRoot;
+import com.valdifly.domain.common.RemoteUrl;
 import com.valdifly.domain.device.valueobject.DeviceProfileId;
 import com.valdifly.domain.deviceslot.valueobject.DeviceSlotId;
 import com.valdifly.domain.deviceslot.valueobject.DeviceSlotStatus;
@@ -28,7 +29,7 @@ public class DeviceSlot implements AggregateRoot<DeviceSlotId> {
     private Instant updatedAt;
 
     public static DeviceSlot create(String name, DeviceProfileId deviceProfileId, String remoteUrl) {
-        return new DeviceSlot(DeviceSlotId.generate(), name, deviceProfileId, remoteUrl);
+        return new DeviceSlot(DeviceSlotId.generate(), name, deviceProfileId, requireRemoteUrl(remoteUrl));
     }
 
     public static DeviceSlot reconstitute(
@@ -43,7 +44,7 @@ public class DeviceSlot implements AggregateRoot<DeviceSlotId> {
             Instant createdAt,
             Instant updatedAt
     ) {
-        DeviceSlot slot = new DeviceSlot(id, name, deviceProfileId, remoteUrl);
+        DeviceSlot slot = new DeviceSlot(id, name, deviceProfileId, RemoteUrl.lenient(remoteUrl));
         slot.udid = blankToNull(udid);
         slot.status = Objects.requireNonNull(status, "status is required");
         slot.allocatedRunId = allocatedRunId;
@@ -57,7 +58,7 @@ public class DeviceSlot implements AggregateRoot<DeviceSlotId> {
         this.id = Objects.requireNonNull(id, "id is required");
         this.name = requireName(name);
         this.deviceProfileId = Objects.requireNonNull(deviceProfileId, "deviceProfileId is required");
-        this.remoteUrl = requireRemoteUrl(remoteUrl);
+        this.remoteUrl = remoteUrl;
         this.status = DeviceSlotStatus.AVAILABLE;
         this.createdAt = TimeUtils.now();
         this.updatedAt = this.createdAt;
@@ -132,10 +133,11 @@ public class DeviceSlot implements AggregateRoot<DeviceSlotId> {
     }
 
     private static String requireRemoteUrl(String remoteUrl) {
-        if (remoteUrl == null || remoteUrl.isBlank()) {
+        String url = RemoteUrl.of(remoteUrl);
+        if (url == null) {
             throw new IllegalArgumentException("remoteUrl is required");
         }
-        return remoteUrl.trim();
+        return url;
     }
 
     private static String blankToNull(String value) {

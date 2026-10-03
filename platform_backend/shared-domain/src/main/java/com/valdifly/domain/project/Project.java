@@ -48,7 +48,7 @@ public class Project implements AggregateRoot<ProjectId> {
 
     private Project(ProjectId id, String name, String description, OrganizationId organizationId) {
         this.id = Objects.requireNonNull(id);
-        this.name = Objects.requireNonNull(name);
+        this.name = requireName(name);
         this.description = description;
         this.organizationId = organizationId;
         this.active = true;
@@ -57,7 +57,7 @@ public class Project implements AggregateRoot<ProjectId> {
     }
 
     public void rename(String newName) {
-        this.name = Objects.requireNonNull(newName);
+        this.name = requireName(newName);
         touch();
     }
 
@@ -73,6 +73,14 @@ public class Project implements AggregateRoot<ProjectId> {
 
     private void touch() {
         this.updatedAt = TimeUtils.now();
+    }
+
+    private static String requireName(String name) {
+        Objects.requireNonNull(name, "name is required");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("name cannot be blank");
+        }
+        return name;
     }
 
     public ProjectId getId() { return id; }

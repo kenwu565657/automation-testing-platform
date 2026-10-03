@@ -4,10 +4,11 @@ import com.valdifly.domain.common.AggregateRoot;
 import com.valdifly.domain.organization.valueobject.OrganizationId;
 import com.valdifly.domain.organizationmembership.valueobject.OrganizationMembershipId;
 import com.valdifly.domain.project.Project;
-import com.valdifly.domain.projectmembership.valueobject.Action;
-import com.valdifly.domain.projectmembership.valueobject.PolicyStatement;
-import com.valdifly.domain.projectmembership.valueobject.ResourceArn;
-import com.valdifly.domain.projectmembership.valueobject.Role;
+import com.valdifly.domain.common.Action;
+import com.valdifly.domain.common.PolicyStatement;
+import com.valdifly.domain.common.ResourceArn;
+import com.valdifly.domain.roletemplate.RoleTemplate;
+import com.valdifly.domain.roletemplate.valueobject.RoleTemplateId;
 import com.valdifly.domain.user.valueobject.UserId;
 import com.valdifly.utils.TimeUtils;
 import java.time.Instant;
@@ -19,25 +20,25 @@ public class OrganizationMembership implements AggregateRoot<OrganizationMembers
     private final OrganizationMembershipId id;
     private final UserId userId;
     private final OrganizationId organizationId;
-    private Role role;
+    private RoleTemplateId roleTemplateId;
     private boolean active;
     private Instant createdAt;
     private Instant updatedAt;
 
-    public static OrganizationMembership create(UserId userId, OrganizationId organizationId, Role role) {
-        return new OrganizationMembership(OrganizationMembershipId.generate(), userId, organizationId, role);
+    public static OrganizationMembership create(UserId userId, OrganizationId organizationId, RoleTemplateId roleTemplateId) {
+        return new OrganizationMembership(OrganizationMembershipId.generate(), userId, organizationId, roleTemplateId);
     }
 
     public static OrganizationMembership reconstitute(
             OrganizationMembershipId id,
             UserId userId,
             OrganizationId organizationId,
-            Role role,
+            RoleTemplateId roleTemplateId,
             boolean active,
             Instant createdAt,
             Instant updatedAt
     ) {
-        OrganizationMembership membership = new OrganizationMembership(id, userId, organizationId, role);
+        OrganizationMembership membership = new OrganizationMembership(id, userId, organizationId, roleTemplateId);
         membership.active = active;
         membership.createdAt = createdAt;
         membership.updatedAt = updatedAt;
@@ -48,19 +49,19 @@ public class OrganizationMembership implements AggregateRoot<OrganizationMembers
             OrganizationMembershipId id,
             UserId userId,
             OrganizationId organizationId,
-            Role role
+            RoleTemplateId roleTemplateId
     ) {
         this.id = Objects.requireNonNull(id);
         this.userId = Objects.requireNonNull(userId, "userId is required");
         this.organizationId = Objects.requireNonNull(organizationId, "organizationId is required");
-        this.role = Objects.requireNonNull(role, "role is required");
+        this.roleTemplateId = Objects.requireNonNull(roleTemplateId, "roleTemplateId is required");
         this.active = true;
         this.createdAt = TimeUtils.now();
         this.updatedAt = this.createdAt;
     }
 
-    public void changeRole(Role role) {
-        this.role = Objects.requireNonNull(role, "role is required");
+    public void assignTemplate(RoleTemplateId roleTemplateId) {
+        this.roleTemplateId = Objects.requireNonNull(roleTemplateId, "roleTemplateId is required");
         touch();
     }
 
@@ -74,30 +75,45 @@ public class OrganizationMembership implements AggregateRoot<OrganizationMembers
         touch();
     }
 
-    public List<PolicyStatement> policy() {
-        return role.policy(organizationId);
+    /**
+     * Statements from the assigned template; a missing template or one owned by a different
+     * scope yields no statements (fail closed — evaluation denies, it does not throw).
+     */
+    public List<PolicyStatement> policy(RoleTemplate template) {
+        if (template == null || !template.isOwnedBy(organizationId)) {
+            return List.of();
+        }
+        return template.policy();
     }
 
-    public boolean allows(Action action, ResourceArn resource) {
+    public boolean allows(Action action, ResourceArn resource, RoleTemplate template) {
         if (!active) {
             return false;
         }
-        if (policy().stream().anyMatch(statement -> statement.denies(action, resource))) {
+        List<PolicyStatement> statements = policy(template);
+        if (statements.stream().anyMatch(statement -> statement.denies(action, resource))) {
             return false;
         }
-        return policy().stream().anyMatch(statement -> statement.permits(action, resource));
+        return statements.stream().anyMatch(statement -> statement.permits(action, resource));
     }
 
     /**
-     * Org policy covers child projects: same Role actions apply to every project in this organization.
+     * Org policy covers child projects: the assigned template's actions apply to every project
+     * in this organization (org-scope statements never cover plain project ARNs, hence this path).
+     * DENY statements are honored symmetrically with the statement path, so a future DENY in a
+     * template excludes child projects too (dead machinery today — Stage 1 is ALLOW-only).
      */
-    public boolean grants(Action action, Project project) {
+    public boolean grants(Action action, Project project, RoleTemplate template) {
         Objects.requireNonNull(action);
         Objects.requireNonNull(project);
-        if (!active || project.getOrganizationId() == null) {
+        if (!active || project.getOrganizationId() == null || template == null) {
             return false;
         }
-        return organizationId.equals(project.getOrganizationId()) && role.actions().contains(action);
+        ResourceArn projectArn = ResourceArn.project(project.getId());
+        return organizationId.equals(project.getOrganizationId())
+                && template.isOwnedBy(organizationId)
+                && template.policy().stream().noneMatch(statement -> statement.denies(action, projectArn))
+                && template.permits(action);
     }
 
     public ResourceArn resourceArn() {
@@ -121,8 +137,8 @@ public class OrganizationMembership implements AggregateRoot<OrganizationMembers
         return organizationId;
     }
 
-    public Role getRole() {
-        return role;
+    public RoleTemplateId getRoleTemplateId() {
+        return roleTemplateId;
     }
 
     public boolean isActive() {

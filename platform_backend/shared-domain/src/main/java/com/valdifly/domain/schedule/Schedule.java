@@ -4,7 +4,7 @@ import com.valdifly.domain.common.Priority;
 import com.valdifly.domain.testsuite.valueobject.TestSuiteId;
 import com.valdifly.domain.common.AggregateRoot;
 import com.valdifly.domain.environment.valueobject.EnvironmentId;
-import com.valdifly.domain.projectmembership.valueobject.ResourceArn;
+import com.valdifly.domain.common.ResourceArn;
 import com.valdifly.domain.project.valueobject.ProjectId;
 import com.valdifly.domain.schedule.valueobject.ScheduleId;
 import com.valdifly.domain.target.valueobject.ExecutionTargetId;

@@ -1,7 +1,7 @@
 package com.valdifly.domain.organization;
 
 import com.valdifly.domain.organization.valueobject.OrganizationId;
-import com.valdifly.domain.projectmembership.valueobject.ResourceArn;
+import com.valdifly.domain.common.ResourceArn;
 import com.valdifly.domain.user.valueobject.UserId;
 import org.junit.jupiter.api.Test;
 

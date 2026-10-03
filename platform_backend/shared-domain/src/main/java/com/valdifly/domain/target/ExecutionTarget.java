@@ -1,6 +1,7 @@
 package com.valdifly.domain.target;
 
 import com.valdifly.domain.common.AggregateRoot;
+import com.valdifly.domain.common.RemoteUrl;
 import com.valdifly.domain.device.valueobject.DeviceProfileId;
 import com.valdifly.domain.project.valueobject.ProjectId;
 import com.valdifly.domain.target.valueobject.ExecutionTargetId;
@@ -30,7 +31,7 @@ public class ExecutionTarget implements AggregateRoot<ExecutionTargetId> {
             String name,
             String remoteUrl
     ) {
-        return new ExecutionTarget(ExecutionTargetId.generate(), projectId, deviceProfileId, name, remoteUrl);
+        return new ExecutionTarget(ExecutionTargetId.generate(), projectId, deviceProfileId, name, RemoteUrl.of(remoteUrl));
     }
 
     public static ExecutionTarget reconstitute(
@@ -44,7 +45,7 @@ public class ExecutionTarget implements AggregateRoot<ExecutionTargetId> {
             Instant createdAt,
             Instant updatedAt
     ) {
-        ExecutionTarget target = new ExecutionTarget(id, projectId, deviceProfileId, name, remoteUrl);
+        ExecutionTarget target = new ExecutionTarget(id, projectId, deviceProfileId, name, RemoteUrl.lenient(remoteUrl));
         if (extraCapabilities != null) {
             target.extraCapabilities.putAll(extraCapabilities);
         }
@@ -77,26 +78,31 @@ public class ExecutionTarget implements AggregateRoot<ExecutionTargetId> {
         touch();
     }
 
+    /** Blank/null clears back to a local runner; a non-blank value must be an absolute URL with a host. */
     public void updateRemoteUrl(String remoteUrl) {
-        this.remoteUrl = remoteUrl;
+        this.remoteUrl = RemoteUrl.of(remoteUrl);
         touch();
     }
 
     public void setExtraCapability(String key, String value) {
-        Objects.requireNonNull(key, "capability key is required");
-        this.extraCapabilities.put(key, value);
+        this.extraCapabilities.put(requireCapabilityKey(key), value);
         touch();
     }
 
     public void replaceExtraCapabilities(Map<String, String> capabilities) {
         extraCapabilities.clear();
         if (capabilities != null) {
-            capabilities.forEach((key, value) -> {
-                Objects.requireNonNull(key, "capability key is required");
-                extraCapabilities.put(key, value);
-            });
+            capabilities.forEach((key, value) -> extraCapabilities.put(requireCapabilityKey(key), value));
         }
         touch();
+    }
+
+    private static String requireCapabilityKey(String key) {
+        Objects.requireNonNull(key, "capability key is required");
+        if (key.isBlank()) {
+            throw new IllegalArgumentException("capability key must not be blank");
+        }
+        return key;
     }
 
     public void deactivate() {

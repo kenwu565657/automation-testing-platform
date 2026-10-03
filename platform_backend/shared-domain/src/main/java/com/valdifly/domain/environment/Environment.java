@@ -38,7 +38,7 @@ public class Environment implements AggregateRoot<EnvironmentId> {
 
     private Environment(EnvironmentId id, String name, ProjectId projectId) {
         this.id = Objects.requireNonNull(id);
-        this.name = Objects.requireNonNull(name);
+        this.name = requireName(name);
         this.projectId = Objects.requireNonNull(projectId);
         this.variables = new LinkedHashMap<>();
         this.active = true;
@@ -47,6 +47,11 @@ public class Environment implements AggregateRoot<EnvironmentId> {
     }
 
     public void setVariable(String key, String value) {
+        Objects.requireNonNull(key, "variable key is required");
+        key = key.trim();
+        if (key.isBlank()) {
+            throw new IllegalArgumentException("variable key must not be blank");
+        }
         this.variables.put(key, value);
         touch();
     }
@@ -68,6 +73,14 @@ public class Environment implements AggregateRoot<EnvironmentId> {
 
     private void touch() {
         this.updatedAt = TimeUtils.now();
+    }
+
+    private static String requireName(String name) {
+        Objects.requireNonNull(name, "name is required");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("name cannot be blank");
+        }
+        return name;
     }
 
     public EnvironmentId getId() { return id; }

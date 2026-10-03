@@ -40,7 +40,7 @@ public class TestSuite implements AggregateRoot<TestSuiteId> {
 
     private TestSuite(TestSuiteId id, String name, String description, ProjectId projectId) {
         this.id = Objects.requireNonNull(id);
-        this.name = Objects.requireNonNull(name);
+        this.name = requireName(name);
         this.description = description;
         this.projectId = Objects.requireNonNull(projectId);
         this.testCaseIds = new ArrayList<>();
@@ -87,6 +87,14 @@ public class TestSuite implements AggregateRoot<TestSuiteId> {
 
     private void touch() {
         this.updatedAt = TimeUtils.now();
+    }
+
+    private static String requireName(String name) {
+        Objects.requireNonNull(name, "name is required");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("name cannot be blank");
+        }
+        return name;
     }
 
     public TestSuiteId getId() {

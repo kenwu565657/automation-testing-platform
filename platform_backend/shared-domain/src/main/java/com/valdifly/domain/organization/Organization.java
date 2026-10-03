@@ -2,7 +2,7 @@ package com.valdifly.domain.organization;
 
 import com.valdifly.domain.common.AggregateRoot;
 import com.valdifly.domain.organization.valueobject.OrganizationId;
-import com.valdifly.domain.projectmembership.valueobject.ResourceArn;
+import com.valdifly.domain.common.ResourceArn;
 import com.valdifly.domain.user.valueobject.UserId;
 import com.valdifly.utils.TimeUtils;
 import java.time.Instant;

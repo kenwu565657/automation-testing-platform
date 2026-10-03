@@ -20,6 +20,6 @@ class EventTypeTest {
             assertTrue(value.startsWith("test.") || value.startsWith("engine."), value);
             assertTrue(value.contains("."), value);
         }
-        assertEquals(11, values.size());
+        assertEquals(9, values.size());
     }
 }

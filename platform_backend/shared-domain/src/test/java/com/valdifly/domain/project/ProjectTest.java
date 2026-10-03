@@ -51,4 +51,10 @@ class ProjectTest {
         Project project = Project.create("Shop", null);
         assertThrows(NullPointerException.class, () -> project.rename(null));
     }
+
+    @Test
+    void renameRejectsBlank() {
+        Project project = Project.create("Shop", null);
+        assertThrows(IllegalArgumentException.class, () -> project.rename("   "));
+    }
 }

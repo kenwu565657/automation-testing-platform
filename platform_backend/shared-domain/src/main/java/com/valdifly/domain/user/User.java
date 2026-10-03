@@ -1,7 +1,7 @@
 package com.valdifly.domain.user;
 
 import com.valdifly.domain.common.AggregateRoot;
-import com.valdifly.domain.projectmembership.valueobject.ResourceArn;
+import com.valdifly.domain.common.ResourceArn;
 import com.valdifly.domain.user.valueobject.UserId;
 import com.valdifly.utils.TimeUtils;
 

@@ -19,8 +19,6 @@ public final class EventType {
     // ── Engine → Report ──
     public static final String TEST_RUN_STARTED       = "test.run.started";
     public static final String TEST_RUN_COMPLETED     = "test.run.completed";
-    public static final String TEST_CASE_STARTED      = "test.case.started";
-    public static final String TEST_CASE_COMPLETED    = "test.case.completed";
     public static final String TEST_STEP_COMPLETED    = "test.step.completed";
 
     // ── Admin → Anyone (lifecycle) ──
