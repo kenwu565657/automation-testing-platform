@@ -28,6 +28,7 @@ kafka = "4.1.2"
 
 # ── Search & Cache ──
 elasticsearch = "8.16.1"
+openhtmltopdf = "1.0.10"
 lettuce = "6.5.1.RELEASE"
 
 # ── Serialization ──
@@ -44,11 +45,23 @@ cucumber = "7.20.1"
 rest-assured = "5.5.0"
 gatling = "3.13.1"
 
+# ── HTTP contract / auth ──
+springdoc = "2.8.6"
+jjwt = "0.12.6"
+micrometer = "1.14.4"
+micrometer-tracing = "1.4.3"
+opentelemetry = "1.46.0"
+opentelemetry-bom = "1.43.0"
+
 # ── Build Tools ──
 lombok = "1.18.36"
 shadow = "8.1.1"
 mapstruct = "1.5.5.Final"
 jacoco = "0.8.12"
+
+# ── Scheduling ──
+elasticjob = "3.0.4"
+j2objc = "3.0.0"
 
 # ── Cloud & AWS ──
 aws-sdk = "2.25.11"
@@ -56,9 +69,12 @@ aws-sdk = "2.25.11"
 # ── Logging ──
 slf4j = "2.0.16"
 logback = "1.5.12"
+logstash-logback-encoder = "8.1"
 
 # ── Testing ──
 junit = "5.11.3"
+assertj = "3.26.3"
+mockito = "5.14.2"
 mockk = "1.13.16"
 testcontainers = "1.20.4"
 h2 = "2.3.232"
@@ -66,9 +82,13 @@ h2 = "2.3.232"
 [libraries]
 # ── Spring Boot Starters ──
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
 spring-boot-starter-data-redis-reactive = { module = "org.springframework.boot:spring-boot-starter-data-redis-reactive" }
@@ -82,12 +102,26 @@ spring-cloud-starter-circuitbreaker-resilience4j = { module = "org.springframewo
 # ── Spring Kafka ──
 spring-kafka = { module = "org.springframework.kafka:spring-kafka" }
 
+# ── OpenAPI / Swagger UI ──
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# ── Metrics / tracing ──
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel", version.ref = "micrometer-tracing" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
+opentelemetry-exporter-otlp-bom = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry-bom" }
+opentelemetry-sdk-bom = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry-bom" }
+vertx-opentelemetry = { module = "io.vertx:vertx-opentelemetry", version.ref = "vertx" }
+
 # ── Vert.x ──
 vertx-core = { module = "io.vertx:vertx-core", version.ref = "vertx" }
 vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
 vertx-web-client = { module = "io.vertx:vertx-web-client", version.ref = "vertx" }
 vertx-config = { module = "io.vertx:vertx-config", version.ref = "vertx" }
 vertx-health-check = { module = "io.vertx:vertx-health-check", version.ref = "vertx" }
+vertx-micrometer-metrics = { module = "io.vertx:vertx-micrometer-metrics", version.ref = "vertx" }
 vertx-kafka-client = { module = "io.vertx:vertx-kafka-client", version.ref = "vertx" }
 vertx-redis-client = { module = "io.vertx:vertx-redis-client", version.ref = "vertx" }
 vertx-pg-client = { module = "io.vertx:vertx-pg-client", version.ref = "vertx" }
@@ -105,12 +139,14 @@ ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
 ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
 ktor-server-sse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
 
 # ── Ktor Client ──
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
 # ── Ktor Serialization ──
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
@@ -137,9 +173,15 @@ kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafk
 
 # ── Elasticsearch ──
 elasticsearch-java = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elasticsearch" }
+openhtmltopdf-pdfbox = { module = "com.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
 
 # ── Redis ──
 lettuce = { module = "io.lettuce:lettuce-core", version.ref = "lettuce" }
+
+# ── ElasticJob (ZooKeeper registry) ──
+elasticjob-lite-core = { module = "org.apache.shardingsphere.elasticjob:elasticjob-lite-core", version.ref = "elasticjob" }
+elasticjob-simple-executor = { module = "org.apache.shardingsphere.elasticjob:elasticjob-simple-executor", version.ref = "elasticjob" }
+j2objc-annotations = { module = "com.google.j2objc:j2objc-annotations", version.ref = "j2objc" }
 
 # ── Jackson ──
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
@@ -157,13 +199,21 @@ appium-java-client = { module = "io.appium:java-client", version.ref = "appium" 
 cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
 cucumber-core = { module = "io.cucumber:cucumber-core", version.ref = "cucumber" }
 rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
+gatling-core-java = { module = "io.gatling:gatling-core-java", version.ref = "gatling" }
+gatling-http-java = { module = "io.gatling:gatling-http-java", version.ref = "gatling" }
+gatling-app = { module = "io.gatling:gatling-app", version.ref = "gatling" }
+gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
 
 # ── Logging ──
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
 
 # ── Testing ──
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
@@ -178,6 +228,9 @@ mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 
 # ── AWS SDK ──
+aws-s3 = { module = "software.amazon.awssdk:s3", version.ref = "aws-sdk" }
+aws-url-connection-client = { module = "software.amazon.awssdk:url-connection-client", version.ref = "aws-sdk" }
+aws-apache-client = { module = "software.amazon.awssdk:apache-client", version.ref = "aws-sdk" }
 aws-secretsmanager = { module = "software.amazon.awssdk:secretsmanager", version.ref = "aws-sdk" }
 aws-regions = { module = "software.amazon.awssdk:regions", version.ref = "aws-sdk" }
 

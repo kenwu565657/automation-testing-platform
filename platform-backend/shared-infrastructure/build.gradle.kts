@@ -23,8 +23,10 @@ dependencies {
     // PostgresSQL driver
     compileOnly(libs.postgresql)
 
-    // Logging
+    // Logging — api so consumers also get the JSON encoder backing the shared
+    // logback-base.xml include (see src/main/resources/com/valdifly/infrastructure/logging/)
     implementation(libs.slf4j.api)
+    api(libs.logstash.logback.encoder)
 
     implementation(libs.hibernate.core)
 
@@ -33,4 +35,5 @@ dependencies {
 
     // Unit testing
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.logback.classic) // loads logback-base.xml through Joran in LogbackBaseConfigTest
 }
