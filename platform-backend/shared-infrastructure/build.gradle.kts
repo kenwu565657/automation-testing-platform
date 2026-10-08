@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     api(project(":shared-domain"))
-    api(project(":shared-utils"))
 
     // Jackson (runtime — this module provides actual serializers)
     api(libs.jackson.databind)
@@ -16,22 +15,10 @@ dependencies {
     compileOnly(libs.kafka.clients)
     testImplementation(libs.kafka.clients)
 
-    // Flyway (for migration helper)
-    compileOnly(libs.flyway.core)
-    compileOnly(libs.flyway.postgresql)
-
-    // PostgresSQL driver
-    compileOnly(libs.postgresql)
-
     // Logging — api so consumers also get the JSON encoder backing the shared
     // logback-base.xml include (see src/main/resources/com/valdifly/infrastructure/logging/)
     implementation(libs.slf4j.api)
     api(libs.logstash.logback.encoder)
-
-    implementation(libs.hibernate.core)
-
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
 
     // Unit testing
     testImplementation(libs.junit.jupiter)
