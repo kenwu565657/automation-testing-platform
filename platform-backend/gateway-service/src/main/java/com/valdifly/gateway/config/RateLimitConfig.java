@@ -1,4 +1,4 @@
-package com.platform.testing.gateway.config;
+package com.valdifly.gateway.config;
 
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;

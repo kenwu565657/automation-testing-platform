@@ -13,6 +13,8 @@ dependencyManagement {
 dependencies {
     implementation(libs.spring.cloud.starter.gateway)
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.micrometer.registry.prometheus)
+    implementation(libs.micrometer.tracing.bridge.otel)
+    implementation(libs.opentelemetry.exporter.otlp.bom)
     implementation(libs.spring.boot.starter.data.redis.reactive)
-    implementation(libs.spring.cloud.starter.circuitbreaker.resilience4j)
 }

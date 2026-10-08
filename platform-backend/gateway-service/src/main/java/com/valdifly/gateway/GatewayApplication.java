@@ -1,4 +1,4 @@
-package com.platform.testing.gateway;
+package com.valdifly.gateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
