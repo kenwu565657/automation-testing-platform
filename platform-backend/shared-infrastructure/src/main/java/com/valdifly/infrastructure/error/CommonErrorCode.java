@@ -1,39 +1,56 @@
 package com.valdifly.infrastructure.error;
 
 /**
- * Platform-wide error vocabulary shared by all services.
+ * Platform-wide error vocabulary shared by all services, following the numeric
+ * scheme in {@link ErrorCode}: {@code <HTTP status><2-digit sequence>}.
  *
- * Codes match the values report-service already ships (BAD_REQUEST / NOT_FOUND /
- * INTERNAL_ERROR) so existing clients keep parsing them when services adopt
- * {@code com.valdifly.infrastructure.web.ErrorBody}. Service-specific failures
- * get their own enum implementing
- * {@link ErrorCode} rather than a new constant here.
+ * Service-specific failures get their own enum implementing {@link ErrorCode}
+ * rather than a new constant here.
  */
 public enum CommonErrorCode implements ErrorCode {
 
-    BAD_REQUEST("BAD_REQUEST", 400),
-    UNAUTHENTICATED("UNAUTHENTICATED", 401),
-    FORBIDDEN("FORBIDDEN", 403),
-    NOT_FOUND("NOT_FOUND", 404),
-    CONFLICT("CONFLICT", 409),
-    UPSTREAM_FAILURE("UPSTREAM_FAILURE", 502),
-    INTERNAL_ERROR("INTERNAL_ERROR", 500);
+    SUCCESS(0, "success"),
 
-    private final String code;
-    private final int httpStatus;
+    // 4xxxx — client-side errors
+    BAD_REQUEST(40001, "Malformed request"),
+    VALIDATION_FAILED(40002, "Validation failed"),
+    UNAUTHENTICATED(40101, "Authentication required"),
+    FORBIDDEN(40301, "Forbidden"),
+    NOT_FOUND(40401, "Not found"),
+    METHOD_NOT_ALLOWED(40501, "Method not allowed"),
+    NOT_ACCEPTABLE(40601, "Not acceptable"),
+    CONFLICT(40901, "Conflict"),
+    UNSUPPORTED_MEDIA_TYPE(41501, "Unsupported media type"),
+    RATE_LIMITED(42901, "Rate limit exceeded"),
 
-    CommonErrorCode(String code, int httpStatus) {
+    // 422xx — business rule violations (well-formed request, domain says no)
+    BUSINESS_RULE_VIOLATION(42201, "Business rule violated"),
+
+    // 5xxxx — server-side errors
+    INTERNAL_ERROR(50001, "Internal error"),
+    DB_ERROR(50002, "Database error"),
+    UPSTREAM_FAILURE(50201, "Upstream failure"),
+    SERVICE_UNAVAILABLE(50301, "Service unavailable");
+
+    private final int code;
+    private final String defaultMessage;
+
+    CommonErrorCode(int code, String defaultMessage) {
         this.code = code;
-        this.httpStatus = httpStatus;
+        this.defaultMessage = defaultMessage;
+    }
+
+    private static int httpStatusOf(int code) {
+        return code / 100;
     }
 
     @Override
-    public String code() {
+    public int code() {
         return code;
     }
 
     @Override
-    public int httpStatus() {
-        return httpStatus;
+    public String defaultMessage() {
+        return defaultMessage;
     }
 }
