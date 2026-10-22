@@ -2,7 +2,7 @@ package com.valdifly.infrastructure.logging;
 
 /**
  * Canonical MDC key names shared by every service, so structured log fields
- * (and the traceId on {@code com.valdifly.infrastructure.web.ErrorBody}) are
+ * (and the traceId on {@code com.valdifly.infrastructure.web.ApiResponse}) are
  * spelled identically everywhere — one spelling per field, see
  * DDD_STANDARDS.md §7.
  *
@@ -24,6 +24,26 @@ public final class LogFields {
 
     /** Authenticated actor id, set by inbound adapters after authentication. */
     public static final String USER_ID = "userId";
+
+    // ── API access-log fields (set only while the access-log line is emitted) ──
+
+    /** HTTP method of the request being logged, e.g. {@code GET}. */
+    public static final String HTTP_METHOD = "httpMethod";
+
+    /** HTTP path of the request being logged, e.g. {@code /api/v1/project}. */
+    public static final String HTTP_PATH = "httpPath";
+
+    /** HTTP status of the response being logged, e.g. {@code 200}. */
+    public static final String HTTP_STATUS = "httpStatus";
+
+    /** Request duration in milliseconds. */
+    public static final String DURATION_MS = "durationMs";
+
+    /** Remote client address of the request. */
+    public static final String CLIENT_IP = "clientIp";
+
+    /** User-Agent header of the request. */
+    public static final String USER_AGENT = "userAgent";
 
     private LogFields() {}
 }
