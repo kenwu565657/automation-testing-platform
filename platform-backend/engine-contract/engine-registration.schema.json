@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "engine-registration.schema.json",
+  "title": "EngineRegistration",
+  "type": "object",
+  "required": ["id", "capabilities"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "enum": ["WEB_E2E", "MOBILE_E2E", "API", "LOAD_TEST"] }
+    },
+    "transport": { "enum": ["HTTP", "KAFKA"], "description": "KAFKA engines receive engine.assignment and report engine.status" }
+  },
+  "additionalProperties": false
+}
