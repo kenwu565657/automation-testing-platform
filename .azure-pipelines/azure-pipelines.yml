@@ -1,0 +1,40 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - "*"
+
+pr:
+  branches:
+    include:
+      - "*"
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: BackendTests
+    displayName: Backend tests
+    steps:
+      - task: Gradle@3
+        displayName: Backend tests
+        inputs:
+          gradleWrapperFile: gradlew
+          workingDirectory: $(Build.SourcesDirectory)
+          tasks: test
+          options: --no-daemon
+          publishJUnitResults: false
+          javaHomeOption: JDKVersion
+          jdkVersionOption: "1.21"
+          jdkArchitectureOption: x64
+          sonarQubeRunAnalysis: false
+
+      - task: PublishTestResults@2
+        displayName: Publish test results
+        condition: always()
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: "**/build/test-results/test/*.xml"
+          testRunTitle: Backend tests
+          failTaskOnFailedTests: true
+          failTaskOnMissingResultsFile: false
