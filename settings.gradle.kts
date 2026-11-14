@@ -1,0 +1,28 @@
+rootProject.name = "valdifly"
+
+include("shared-domain")
+project(":shared-domain").projectDir = file("shared/java/domain")
+include("shared-infrastructure")
+project(":shared-infrastructure").projectDir = file("shared/java/infrastructure")
+include("shared-utils")
+project(":shared-utils").projectDir = file("shared/java/utils")
+include("shared-spring")
+project(":shared-spring").projectDir = file("shared/java/spring")
+include("shared-vertx")
+project(":shared-vertx").projectDir = file("shared/java/vertx")
+
+include("gateway-service")
+project(":gateway-service").projectDir = file("platform-gateway")
+include("admin-service")
+project(":admin-service").projectDir = file("platform-admin")
+include("engine-coordinator-service")
+project(":engine-coordinator-service").projectDir = file("platform-coordinator")
+include("report-service")
+project(":report-service").projectDir = file("platform-report")
+
+include("engine-core")
+project(":engine-core").projectDir = file("engines/core")
+include("engine-mobile")
+project(":engine-mobile").projectDir = file("engines/mobile")
+include("engine-api")
+project(":engine-api").projectDir = file("engines/api")

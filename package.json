@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "workspaces": [
+    "platform-web",
+    "shared/typescript/engine",
+    "engines/playwright",
+    "engines/k6"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present"
+  }
+}
