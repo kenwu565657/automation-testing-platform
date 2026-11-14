@@ -1,0 +1,106 @@
+services:
+  mobile-engine:
+    profiles: [services]
+    build:
+      context: ../../../..
+      dockerfile: deployment/docker-compose/service/engine/Dockerfile.mobile
+    container_name: ${COMPOSE_PROJECT_NAME}-mobile
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ADMIN_SERVICE_URL: http://admin-service:8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_BUCKET: valdifly-artifacts
+      COORDINATOR_URL: http://engine-coordinator-service:8084
+      ENGINE_ID: java-mobile
+      ENGINE_CAPABILITIES: MOBILE_E2E
+      SERVER_PORT: "8082"
+      OTEL_SERVICE_NAME: mobile-engine
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+    depends_on:
+      admin-service:
+        condition: service_healthy
+      engine-coordinator-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api-engine:
+    profiles: [services]
+    build:
+      context: ../../../..
+      dockerfile: deployment/docker-compose/service/engine/Dockerfile.api
+    container_name: ${COMPOSE_PROJECT_NAME}-api
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ADMIN_SERVICE_URL: http://admin-service:8081
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_BUCKET: valdifly-artifacts
+      COORDINATOR_URL: http://engine-coordinator-service:8084
+      ENGINE_ID: java-api
+      ENGINE_CAPABILITIES: API
+      SERVER_PORT: "8085"
+      OTEL_SERVICE_NAME: api-engine
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+    depends_on:
+      admin-service:
+        condition: service_healthy
+      engine-coordinator-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8085/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

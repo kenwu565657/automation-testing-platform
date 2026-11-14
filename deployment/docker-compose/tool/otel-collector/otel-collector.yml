@@ -1,0 +1,16 @@
+services:
+  otel-collector:
+    profiles: [tools]
+    image: otel/opentelemetry-collector:${OTEL_COLLECTOR_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-otel-collector
+    restart: unless-stopped
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./config.yml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - tempo
+    networks:
+      - platform-network

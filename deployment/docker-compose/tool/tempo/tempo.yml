@@ -1,0 +1,14 @@
+services:
+  tempo:
+    profiles: [tools]
+    image: grafana/tempo:${TEMPO_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./config.yml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - platform-network

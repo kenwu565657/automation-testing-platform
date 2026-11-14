@@ -1,0 +1,47 @@
+services:
+  report-service:
+    profiles: [services]
+    build:
+      context: ../../../..
+      dockerfile: deployment/docker-compose/service/report/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-report
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ELASTICSEARCH_HOSTS: elasticsearch:9200
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_BUCKET: valdifly-artifacts
+      OTEL_SERVICE_NAME: report-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

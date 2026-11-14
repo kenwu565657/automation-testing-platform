@@ -1,0 +1,15 @@
+services:
+  redisinsight:
+    profiles: [tools]
+    image: redis/redisinsight:${REDISINSIGHT_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-redisinsight
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight-data:/data
+    networks:
+      - platform-network

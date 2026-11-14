@@ -1,0 +1,18 @@
+services:
+  zoonavigator:
+    profiles: [tools]
+    image: elkozmon/zoonavigator:${ZOONAVIGATOR_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-zoonavigator
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    environment:
+      HTTP_PORT: 9000
+      CONNECTION_LOCALZK_NAME: valdifly
+      CONNECTION_LOCALZK_CONN: zookeeper:2181
+      AUTO_CONNECT_CONNECTION_ID: LOCALZK
+    networks:
+      - platform-network

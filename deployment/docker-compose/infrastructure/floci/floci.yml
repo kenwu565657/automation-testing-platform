@@ -1,0 +1,22 @@
+# Local S3 API (AWS SDK endpoint). Production uses real S3.
+# This product only uses S3 on Floci — not Kafka, Postgres, or Redis.
+services:
+  floci:
+    image: floci/floci:${FLOCI_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-floci
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      FLOCI_STORAGE_MODE: hybrid
+      FLOCI_STORAGE_PERSISTENT_PATH: /app/data
+    volumes:
+      - floci-data:/app/data
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4566/ >/dev/null 2>&1 || curl -sf http://127.0.0.1:4566/ >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s

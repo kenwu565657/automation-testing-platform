@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════
+#  Master compose — includes all sub-files.
+#
+#  Usage:
+#    docker compose up -d                        (infra only)
+#    docker compose --profile services up -d     (infra + services)
+#    docker compose --profile tools up -d        (infra + tools)
+#    docker compose --profile services --profile tools up -d  (all)
+# ═══════════════════════════════════════════════════════════
+
+include:
+  # ── Infrastructure (always starts) ──
+  - path: infrastructure/postgres/postgres.yml
+  - path: infrastructure/kafka/kafka.yml
+  - path: infrastructure/elasticsearch/elasticsearch.yml
+  - path: infrastructure/redis/redis.yml
+  - path: infrastructure/zookeeper/zookeeper.yml
+  - path: infrastructure/floci/floci.yml
+
+  # ── Dev Tools (opt-in) ──
+  - path: tool/kibana/kibana.yml
+  - path: tool/kafka-ui/kafka-ui.yml
+  - path: tool/redisinsight/redisinsight.yml
+  - path: tool/zoonavigator/zoonavigator.yml
+  - path: tool/elasticjob-ui/elasticjob-ui.yml
+  - path: tool/s3manager/s3manager.yml
+  - path: tool/prometheus/prometheus.yml
+  - path: tool/alertmanager/alertmanager.yml
+  - path: tool/tempo/tempo.yml
+  - path: tool/otel-collector/otel-collector.yml
+  - path: tool/grafana/grafana.yml
+
+  # ── Application Services (opt-in) ──
+  - path: infrastructure/nginx/nginx.yml
+  - path: service/gateway/gateway.yml
+  - path: service/admin/admin.yml
+  - path: service/engine/engine.yml
+  - path: service/coordinator/coordinator.yml
+  - path: service/report/report.yml
+
+networks:
+  platform-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  kafka-data:
+  elasticsearch-data:
+  redis-data:
+  zookeeper-data:
+  zookeeper-datalog:
+  floci-data:
+  prometheus-data:
+  grafana-data:
+  tempo-data:
+  redisinsight-data:

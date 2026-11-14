@@ -1,0 +1,15 @@
+services:
+  kibana:
+    profiles: [tools]
+    image: docker.elastic.co/kibana/kibana:${KIBANA_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-kibana
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - platform-network

@@ -1,0 +1,56 @@
+services:
+  admin-service:
+    profiles: [services]
+    build:
+      context: ../../../..
+      dockerfile: deployment/docker-compose/service/admin/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-admin
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+      ELASTICJOB_SERVER_LISTS: zookeeper:2181
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      S3_BUCKET: valdifly-artifacts
+      OTEL_SERVICE_NAME: admin-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      JWT_SECRET: ${JWT_SECRET}
+      PLATFORM_AI_BASE_URL: ${PLATFORM_AI_BASE_URL:-}
+      PLATFORM_AI_API_KEY: ${PLATFORM_AI_API_KEY:-}
+      PLATFORM_AI_MODEL: ${PLATFORM_AI_MODEL:-gpt-4.1-mini}
+      # Distinct from JWT_SECRET: compose-only dev default, overridable via .env
+      PLATFORM_AI_SETTINGS_SECRET: ${PLATFORM_AI_SETTINGS_SECRET:-compose-dev-only-ai-settings-secret-32b}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

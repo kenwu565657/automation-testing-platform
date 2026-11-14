@@ -1,0 +1,14 @@
+services:
+  elasticjob-ui:
+    profiles: [tools]
+    image: apache/shardingsphere-elasticjob-lite-ui:${ELASTICJOB_UI_VERSION}
+    platform: linux/amd64
+    container_name: ${COMPOSE_PROJECT_NAME}-elasticjob-ui
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+    networks:
+      - platform-network

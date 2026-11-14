@@ -1,0 +1,14 @@
+services:
+  alertmanager:
+    profiles: [tools]
+    image: prom/alertmanager:${ALERTMANAGER_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9094:9093"
+    volumes:
+      - ./config.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    networks:
+      - platform-network

@@ -1,0 +1,73 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["gateway-service:18080"]
+        labels:
+          source: compose
+
+  - job_name: admin
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["admin-service:9081"]
+        labels:
+          source: compose
+
+  - job_name: gateway-ide
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:18080"]
+        labels:
+          source: ide
+
+  - job_name: admin-ide
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:9081"]
+        labels:
+          source: ide
+
+  - job_name: engine
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["mobile-engine:8082", "api-engine:8085"]
+      - targets: ["engine-coordinator-service:8084"]
+        labels:
+          source: compose
+
+  - job_name: report
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["report-service:8083"]
+        labels:
+          source: compose
+
+  - job_name: engine-ide
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8082"]
+        labels:
+          source: ide
+
+  - job_name: report-ide
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8083"]
+        labels:
+          source: ide
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - /etc/prometheus/alerts.yml
