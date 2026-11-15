@@ -7,6 +7,17 @@
     "engines/k6"
   ],
   "scripts": {
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "test:workflow": "node --test scripts/api-workflow.test.mjs scripts/dev-seed.test.mjs",
+    "dev:seed": "node scripts/dev-seed.mjs",
+    "test:coverage-tools": "node --test scripts/coverage.test.mjs",
+    "coverage:node": "npm run test:coverage --workspaces --if-present",
+    "coverage": "./gradlew coverageSummary && npm run coverage:node && node scripts/coverage.mjs",
+    "api:sync": "node scripts/api-workflow.mjs sync",
+    "api:check": "node scripts/api-workflow.mjs check"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
+    "c8": "^10.1.3"
   }
 }
