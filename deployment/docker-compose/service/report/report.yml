@@ -29,14 +29,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       elasticsearch:
         condition: service_healthy
+      elasticsearch-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       floci:
         condition: service_healthy
+      s3-init:
+        condition: service_completed_successfully
     networks:
       - platform-network
     healthcheck:

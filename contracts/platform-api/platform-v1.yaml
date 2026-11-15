@@ -1,0 +1,2019 @@
+openapi: 3.0.3
+info:
+  title: Platform API
+  version: v1
+  description: >
+    STALE — predates the RestfulApiResponse envelope migration: every bodied 2xx
+    response is now wrapped in { code, message, data, traceId }; the payload types
+    below are the `data` contents and their field names are unchanged. 204s stay
+    bodyless. Regenerate with the service running:
+    curl -s localhost:8081/v3/api-docs.yaml -o platform-v1.yaml (from this directory)
+    Write-side catalog, identity, organization, schedule, and run trigger.
+    Principal is a JWT access token (claim sub = user id).
+    Public path through the gateway is /api/admin/api/v1/... (StripPrefix=2).
+    Create user, login, and refresh are unauthenticated.
+    POST /api/v1/test-case/generate returns an unpersisted CreateTestCaseCommand draft.
+    POST /api/v1/test-case/import returns unpersisted page-object and case drafts from pasted Selenium/Appium sources.
+    Apply locator heals at POST /api/v1/page-object/{id}/heal.
+    dataTable { name, rows } is optional for any AuthoringStyle (Scenario Outline or per-row repetition); use ${column} placeholders in steps.
+    Device-farm inventory lives at /api/v1/device-slot. Triggering a run leases a matching slot; engine uses that URL instead of ExecutionTarget.remoteUrl.
+    Users save their own provider URL and API key at /api/v1/ai-settings; the key is encrypted and never returned.
+servers:
+  - url: http://localhost:8080/api/admin
+    description: Gateway (browser / Postman)
+  - url: http://localhost:8081
+    description: Admin direct
+security:
+  - bearer: []
+tags:
+  - name: Auth
+  - name: User
+  - name: AiSettings
+  - name: Organization
+  - name: OrganizationMembership
+  - name: Project
+  - name: TestCase
+  - name: TestSuite
+  - name: PageObject
+  - name: Environment
+  - name: DeviceProfile
+  - name: DeviceSlot
+  - name: ExecutionTarget
+  - name: Schedule
+  - name: RoleTemplate
+  - name: Run
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid refresh token
+  /api/v1/ai-settings:
+    get:
+      tags: [AiSettings]
+      summary: Get the current user's AI provider settings
+      description: >
+        Returns this user's saved provider, or the platform default when none is saved.
+        The raw API key is never returned. User keys include apiKeyHint (last four characters).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSettingsResponse'
+    put:
+      tags: [AiSettings]
+      summary: Save the current user's AI provider settings
+      description: >
+        Encrypts and stores baseUrl, model, and optional apiKey for this user.
+        Omit apiKey to keep the existing key. Set clearApiKey to drop the stored key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAiSettingsCommand'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSettingsResponse'
+    delete:
+      tags: [AiSettings]
+      summary: Revert to the platform AI default
+      responses:
+        '204':
+          description: Deleted; the platform default applies from here on
+  /api/v1/user:
+    get:
+      tags: [User]
+      summary: Get user by email
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+    post:
+      tags: [User]
+      summary: Create user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+  /api/v1/user/{id}:
+    get:
+      tags: [User]
+      summary: Get user
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+    patch:
+      tags: [User]
+      summary: Update user
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+  /api/v1/organization:
+    get:
+      tags: [Organization]
+      summary: List organizations
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationResponse'
+    post:
+      tags: [Organization]
+      summary: Create organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+  /api/v1/organization/{id}:
+    get:
+      tags: [Organization]
+      summary: Get organization
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+    patch:
+      tags: [Organization]
+      summary: Update organization
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+    delete:
+      tags: [Organization]
+      summary: Delete organization
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+  /api/v1/organization-membership:
+    get:
+      tags: [OrganizationMembership]
+      summary: List organization memberships
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/OrganizationId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationMembershipResponse'
+    post:
+      tags: [OrganizationMembership]
+      summary: Grant organization membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantOrganizationMembershipCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationMembershipResponse'
+  /api/v1/organization-membership/{id}:
+    delete:
+      tags: [OrganizationMembership]
+      summary: Revoke organization membership
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Revoked
+  /api/v1/project:
+    get:
+      tags: [Project]
+      summary: List projects
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/OrganizationIdQuery'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectResponse'
+    post:
+      tags: [Project]
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+  /api/v1/project/{id}:
+    get:
+      tags: [Project]
+      summary: Get project
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+    patch:
+      tags: [Project]
+      summary: Update project
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+    delete:
+      tags: [Project]
+      summary: Delete project
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/test-case:
+    post:
+      tags: [TestCase]
+      summary: Create test case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestCaseCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseResponse'
+    get:
+      tags: [TestCase]
+      summary: List test cases
+      description: Exactly one of projectId, testSuiteId, tag, or testType is required.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: testSuiteId
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: testType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TestType'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestCaseResponse'
+  /api/v1/test-case/{id}:
+    get:
+      tags: [TestCase]
+      summary: Get test case
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseResponse'
+    patch:
+      tags: [TestCase]
+      summary: Update test case
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestCaseCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestCaseResponse'
+  /api/v1/test-suite:
+    post:
+      tags: [TestSuite]
+      summary: Create test suite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestSuiteCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteResponse'
+    get:
+      tags: [TestSuite]
+      summary: List suites by project
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestSuiteResponse'
+  /api/v1/test-suite/{id}:
+    get:
+      tags: [TestSuite]
+      summary: Get test suite
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteResponse'
+    patch:
+      tags: [TestSuite]
+      summary: Update test suite
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestSuiteCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteResponse'
+  /api/v1/page-object:
+    get:
+      tags: [PageObject]
+      summary: List page objects
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageObjectResponse'
+    post:
+      tags: [PageObject]
+      summary: Create page object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePageObjectCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageObjectResponse'
+  /api/v1/page-object/{id}:
+    get:
+      tags: [PageObject]
+      summary: Get page object
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageObjectResponse'
+    patch:
+      tags: [PageObject]
+      summary: Update page object
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePageObjectCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageObjectResponse'
+  /api/v1/page-object/{id}/heal:
+    post:
+      tags: [PageObject]
+      summary: Apply a locator heal
+      description: Promotes the working locator and keeps the previous one as fallback. Does not change pinned runs.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyLocatorHealCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageObjectResponse'
+
+  /api/v1/environment:
+    get:
+      tags: [Environment]
+      summary: List environments
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnvironmentResponse'
+    post:
+      tags: [Environment]
+      summary: Create environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnvironmentCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentResponse'
+  /api/v1/environment/{id}:
+    get:
+      tags: [Environment]
+      summary: Get environment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentResponse'
+    patch:
+      tags: [Environment]
+      summary: Update environment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEnvironmentCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentResponse'
+  /api/v1/device-profile:
+    get:
+      tags: [DeviceProfile]
+      summary: List device profiles
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - name: platform
+          in: query
+          schema:
+            $ref: '#/components/schemas/PlatformType'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceProfileResponse'
+    post:
+      tags: [DeviceProfile]
+      summary: Create device profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeviceProfileCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceProfileResponse'
+  /api/v1/device-profile/{id}:
+    get:
+      tags: [DeviceProfile]
+      summary: Get device profile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceProfileResponse'
+    patch:
+      tags: [DeviceProfile]
+      summary: Update device profile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceProfileCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceProfileResponse'
+  /api/v1/device-slot:
+    get:
+      tags: [DeviceSlot]
+      summary: List farm slots
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - name: deviceProfileId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceSlotResponse'
+    post:
+      tags: [DeviceSlot]
+      summary: Register a farm slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeviceSlotCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+  /api/v1/device-slot/{id}:
+    get:
+      tags: [DeviceSlot]
+      summary: Get farm slot
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+    patch:
+      tags: [DeviceSlot]
+      summary: Update farm slot
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceSlotCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+    delete:
+      tags: [DeviceSlot]
+      summary: Delete farm slot
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+  /api/v1/device-slot/{id}/offline:
+    post:
+      tags: [DeviceSlot]
+      summary: Take slot offline
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+  /api/v1/device-slot/{id}/online:
+    post:
+      tags: [DeviceSlot]
+      summary: Bring slot online
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+  /api/v1/device-slot/{id}/release:
+    post:
+      tags: [DeviceSlot]
+      summary: Release a stuck lease
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceSlotResponse'
+  /api/v1/execution-target:
+    get:
+      tags: [ExecutionTarget]
+      summary: List execution targets
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExecutionTargetResponse'
+    post:
+      tags: [ExecutionTarget]
+      summary: Create execution target
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecutionTargetCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionTargetResponse'
+  /api/v1/execution-target/{id}:
+    get:
+      tags: [ExecutionTarget]
+      summary: Get execution target
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionTargetResponse'
+    patch:
+      tags: [ExecutionTarget]
+      summary: Update execution target
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExecutionTargetCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionTargetResponse'
+  /api/v1/schedule:
+    get:
+      tags: [Schedule]
+      summary: List schedules
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScheduleResponse'
+    post:
+      tags: [Schedule]
+      summary: Create schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleCommand'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+  /api/v1/schedule/{id}:
+    get:
+      tags: [Schedule]
+      summary: Get schedule
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+    patch:
+      tags: [Schedule]
+      summary: Update schedule
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleCommand'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+    delete:
+      tags: [Schedule]
+      summary: Delete schedule
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+  /api/v1/role-template:
+    get:
+      tags: [RoleTemplate]
+      summary: List an organization's role templates
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - name: organizationId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RoleTemplateResponse' }
+    post:
+      tags: [RoleTemplate]
+      summary: Create a role template (requires roleTemplate:Write on the organization)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRoleTemplateCommand' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleTemplateResponse' }
+  /api/v1/role-template/{id}:
+    get:
+      tags: [RoleTemplate]
+      summary: Get a role template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleTemplateResponse' }
+    patch:
+      tags: [RoleTemplate]
+      summary: Update name/actions or deactivate (deactivate rejected while members are assigned)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRoleTemplateCommand' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleTemplateResponse' }
+  /api/v1/run:
+    get:
+      tags: [Execution]
+      summary: List runs by suite
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, maximum: 500 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, default: 0 }
+        - name: testSuiteId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestRunResponse'
+  /api/v1/run/trigger:
+    post:
+      tags: [Execution]
+      summary: Trigger a run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerRunCommand'
+      responses:
+        '202':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerRunResponse'
+  /api/v1/run/{id}:
+    get:
+      tags: [Execution]
+      summary: Get run
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunResponse'
+  /api/v1/run/{id}/cancel:
+    post:
+      tags: [Execution]
+      summary: Cancel a run
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestRunResponse'
+  /api/v1/run/{id}/artifact:
+    get:
+      tags: [Execution]
+      summary: Presign an artifact
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactUrlResponse'
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    ProjectId:
+      name: projectId
+      in: query
+      required: true
+      schema:
+        type: string
+    OrganizationId:
+      name: organizationId
+      in: query
+      required: true
+      schema:
+        type: string
+    OrganizationIdQuery:
+      name: organizationId
+      in: query
+      required: false
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "<HTTP status><2-digit sequence>, e.g. 40401"
+          example: 40401
+        message:
+          type: string
+          example: "Not found"
+        traceId:
+          type: string
+    TestType:
+      type: string
+      enum: [WEB_E2E, MOBILE_E2E, API, LOAD_TEST]
+    AuthoringStyle:
+      type: string
+      enum: [SIMPLE, GHERKIN]
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+    Action:
+      type: string
+      enum: [['ORGANIZATION_GET','ORGANIZATION_UPDATE','ORGANIZATION_DELETE','ORGANIZATION_MANAGE_MEMBERS','ORGANIZATION_CREATE_PROJECT','PROJECT_GET','PROJECT_UPDATE','PROJECT_DELETE','PROJECT_MANAGE_MEMBERS','CATALOG_READ','CATALOG_WRITE','ENVIRONMENT_READ','ENVIRONMENT_WRITE','TARGET_READ','TARGET_WRITE','SCHEDULE_READ','SCHEDULE_WRITE','RUN_READ','RUN_TRIGGER','RUN_CANCEL','REPORT_READ','ROLE_TEMPLATE_WRITE']]
+    RoleTemplateResponse:
+      type: object
+      properties:
+        id: { type: string }
+        organizationId: { type: string }
+        name: { type: string }
+        actions:
+          type: array
+          items: { $ref: '#/components/schemas/Action' }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateRoleTemplateCommand:
+      type: object
+      required: [organizationId, name, actions]
+      properties:
+        organizationId: { type: string }
+        name: { type: string, minLength: 1 }
+        actions:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Action' }
+    UpdateRoleTemplateCommand:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        actions:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/Action' }
+        active: { type: boolean }
+    PlatformType:
+      type: string
+      enum: [WEB_DESKTOP, WEB_MOBILE, NATIVE_MOBILE]
+    OSType:
+      type: string
+      enum: [WINDOWS, MACOS, LINUX, ANDROID, IOS]
+    BrowserType:
+      type: string
+      enum: [CHROME, FIREFOX, EDGE, SAFARI]
+    TriggerKind:
+      type: string
+      enum: [MANUAL, SCHEDULE]
+    RunStatus:
+      type: string
+      enum: [QUEUED, RUNNING, PASSED, FAILED, ERROR, SKIPPED, CANCELLED]
+    LocatorStrategy:
+      type: string
+      enum:
+        - ID
+        - NAME
+        - CSS_SELECTOR
+        - XPATH
+        - CLASS_NAME
+        - TAG_NAME
+        - LINK_TEXT
+        - PARTIAL_LINK_TEXT
+        - ACCESSIBILITY_ID
+        - ANDROID_UIAUTOMATOR
+        - ANDROID_VIEWTAG
+        - ANDROID_DATA_MATCHER
+        - IOS_PREDICATE
+        - IOS_CLASS_CHAIN
+    LoginCommand:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string, minLength: 8 }
+    RefreshTokenCommand:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+    TokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        tokenType: { type: string }
+        expiresIn: { type: integer, format: int64 }
+        userId: { type: string }
+        email: { type: string }
+    CreateUserCommand:
+      type: object
+      required: [email, displayName, password]
+      properties:
+        email:
+          type: string
+        displayName:
+          type: string
+        password:
+          type: string
+          minLength: 8
+    UpdateUserCommand:
+      type: object
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+        active:
+          type: boolean
+        password:
+          type: string
+          minLength: 8
+    UserResponse:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string }
+        displayName: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UpdateAiSettingsCommand:
+      type: object
+      required: [baseUrl]
+      properties:
+        baseUrl: { type: string }
+        model: { type: string }
+        apiKey: { type: string }
+        clearApiKey: { type: boolean }
+    AiSettingsResponse:
+      type: object
+      properties:
+        baseUrl: { type: string }
+        model: { type: string }
+        apiKeySet: { type: boolean }
+        apiKeyHint: { type: string, nullable: true }
+        source: { type: string, enum: [USER, PLATFORM] }
+    CreateOrganizationCommand:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+    UpdateOrganizationCommand:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        active: { type: boolean }
+    OrganizationResponse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        createdBy: { type: string }
+    GrantOrganizationMembershipCommand:
+      type: object
+      required: [userId, organizationId, roleTemplateId]
+      properties:
+        userId: { type: string }
+        organizationId: { type: string }
+        roleTemplateId: { type: string }
+    OrganizationMembershipResponse:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        organizationId: { type: string }
+        roleTemplateId: { type: string }
+        templateName: { type: string, nullable: true }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateProjectCommand:
+      type: object
+      required: [name, organizationId]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        organizationId: { type: string }
+    UpdateProjectCommand:
+      type: object
+      properties:
+        name: { type: string }
+        active: { type: boolean }
+    ProjectResponse:
+      type: object
+      properties:
+        id: { type: string }
+        organizationId: { type: string, nullable: true }
+        name: { type: string }
+        description: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    TestStepCommand:
+      type: object
+      required: [actionType, name]
+      properties:
+        orderIndex: { type: integer }
+        name: { type: string, minLength: 1 }
+        actionType: { type: string }
+        actionParameters:
+          type: object
+          additionalProperties: { type: string }
+        targetElementId: { type: string }
+        assertionType: { type: string }
+        assertionOperator: { type: string }
+        expectedValue: { type: string }
+        actualValueSource: { type: string }
+        extractionVarName: { type: string }
+        extractionSource: { type: string }
+        extractionExpression: { type: string }
+        continueOnFailure: { type: boolean }
+        waitBeforeMs: { type: integer }
+        waitAfterMs: { type: integer }
+        keyword: { type: string }
+        stepText: { type: string }
+        background: { type: boolean }
+    CreateTestCaseCommand:
+      type: object
+      required: [projectId, name, testType, authoringStyle]
+      properties:
+        projectId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        testType: { $ref: '#/components/schemas/TestType' }
+        authoringStyle: { $ref: '#/components/schemas/AuthoringStyle' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        testSuiteId: { type: string }
+        featureTitle: { type: string }
+        scenarioTitle: { type: string }
+        dataTable: { $ref: '#/components/schemas/DataTableCommand' }
+        testStepList:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestStepCommand'
+        tagSet:
+          type: array
+          items: { type: string }
+          uniqueItems: true
+        timeoutSeconds: { type: integer }
+        retryCount: { type: integer }
+    DataTableCommand:
+      type: object
+      required: [name, rows]
+      properties:
+        name: { type: string }
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: { type: string }
+    GenerateTestCaseCommand:
+      type: object
+      required: [projectId, prompt]
+      properties:
+        projectId: { type: string }
+        prompt: { type: string }
+        sourceCaseIds:
+          type: array
+          items: { type: string }
+        testType: { $ref: '#/components/schemas/TestType' }
+        authoringStyle: { $ref: '#/components/schemas/AuthoringStyle' }
+    GeneratedTestCaseResponse:
+      type: object
+      properties:
+        persisted: { type: boolean }
+        draft: { $ref: '#/components/schemas/CreateTestCaseCommand' }
+    ImportSourceFile:
+      type: object
+      required: [path, content]
+      properties:
+        path: { type: string }
+        content: { type: string }
+    ImportCatalogCommand:
+      type: object
+      required: [projectId, files]
+      properties:
+        projectId: { type: string }
+        source: { type: string, description: Optional hint such as SELENIUM or APPIUM }
+        files:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ImportSourceFile'
+        testType: { $ref: '#/components/schemas/TestType' }
+        authoringStyle: { $ref: '#/components/schemas/AuthoringStyle' }
+    ImportedElementBinding:
+      type: object
+      properties:
+        draftId: { type: string }
+        pageObjectName: { type: string }
+        elementName: { type: string }
+    ImportCatalogResponse:
+      type: object
+      properties:
+        persisted: { type: boolean }
+        testType: { $ref: '#/components/schemas/TestType' }
+        authoringStyle: { $ref: '#/components/schemas/AuthoringStyle' }
+        pageObjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreatePageObjectCommand'
+        cases:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateTestCaseCommand'
+        elementBindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportedElementBinding'
+    UpdateTestCaseCommand:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+        testSuiteId: { type: string }
+        featureTitle: { type: string }
+        scenarioTitle: { type: string }
+        dataTable: { $ref: '#/components/schemas/DataTableCommand' }
+        testStepList:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestStepCommand'
+        tagSet:
+          type: array
+          items: { type: string }
+          uniqueItems: true
+        timeoutSeconds: { type: integer }
+        retryCount: { type: integer }
+        active: { type: boolean }
+    TestCaseResponse:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        testType: { $ref: '#/components/schemas/TestType' }
+        authoringStyle: { $ref: '#/components/schemas/AuthoringStyle' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        latestDefinitionVersion: { type: integer }
+        featureTitle: { type: string }
+        scenarioTitle: { type: string }
+        dataTable: { $ref: '#/components/schemas/DataTableCommand' }
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/StepResponse'
+        tags:
+          type: array
+          items: { type: string }
+          uniqueItems: true
+        active: { type: boolean }
+        timeoutSeconds: { type: integer }
+        retryCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        createdBy: { type: string }
+    StepResponse:
+      type: object
+      properties:
+        id: { type: string }
+        orderIndex: { type: integer }
+        name: { type: string }
+        actionType: { type: string }
+        actionParameters:
+          type: object
+          additionalProperties: { type: string }
+        targetElementId: { type: string }
+        assertionType: { type: string }
+        assertionOperator: { type: string }
+        expectedValue: { type: string }
+        actualValueSource: { type: string }
+        extractionVarName: { type: string }
+        extractionSource: { type: string }
+        extractionExpression: { type: string }
+        continueOnFailure: { type: boolean }
+        waitBeforeMs: { type: integer }
+        waitAfterMs: { type: integer }
+        keyword: { type: string }
+        stepText: { type: string }
+        background: { type: boolean }
+    CreateTestSuiteCommand:
+      type: object
+      required: [name, projectId]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        projectId: { type: string }
+        testCaseIds:
+          type: array
+          items: { type: string }
+    UpdateTestSuiteCommand:
+      type: object
+      properties:
+        testCaseIds:
+          type: array
+          items: { type: string }
+        active: { type: boolean }
+    TestSuiteResponse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        projectId: { type: string }
+        testCaseIds:
+          type: array
+          items: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ElementLocatorCommand:
+      type: object
+      required: [platformType, locatorStrategy, locatorValue]
+      properties:
+        platformType: { $ref: '#/components/schemas/PlatformType' }
+        locatorStrategy: { $ref: '#/components/schemas/LocatorStrategy' }
+        locatorValue: { type: string }
+        fallbackStrategy: { $ref: '#/components/schemas/LocatorStrategy' }
+        fallbackValue: { type: string }
+    PageElementCommand:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        locators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ElementLocatorCommand'
+    CreatePageObjectCommand:
+      type: object
+      required: [projectId, name]
+      properties:
+        projectId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        pageUrl: { type: string }
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageElementCommand'
+    UpdatePageObjectCommand:
+      type: object
+      properties:
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageElementCommand'
+    PageObjectResponse:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        pageUrl: { type: string }
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageElementResponse'
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PageElementResponse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        locators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ElementLocatorResponse'
+    ElementLocatorResponse:
+      type: object
+      properties:
+        platformType: { $ref: '#/components/schemas/PlatformType' }
+        locatorStrategy: { $ref: '#/components/schemas/LocatorStrategy' }
+        locatorValue: { type: string }
+        fallbackStrategy: { $ref: '#/components/schemas/LocatorStrategy' }
+        fallbackValue: { type: string }
+    ApplyLocatorHealCommand:
+      type: object
+      required: [elementId, platformType, locatorStrategy, locatorValue]
+      properties:
+        elementId: { type: string }
+        platformType: { $ref: '#/components/schemas/PlatformType' }
+        locatorStrategy: { $ref: '#/components/schemas/LocatorStrategy' }
+        locatorValue: { type: string }
+    CreateEnvironmentCommand:
+      type: object
+      required: [projectId, name]
+      properties:
+        projectId: { type: string }
+        name: { type: string }
+        variables:
+          type: object
+          additionalProperties: { type: string }
+    UpdateEnvironmentCommand:
+      type: object
+      properties:
+        variables:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+    EnvironmentResponse:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        name: { type: string }
+        variables:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateDeviceProfileCommand:
+      type: object
+      required: [name, organizationId, platform]
+      properties:
+        name: { type: string }
+        organizationId: { type: string }
+        platform: { $ref: '#/components/schemas/PlatformType' }
+        os: { $ref: '#/components/schemas/OSType' }
+        browser: { $ref: '#/components/schemas/BrowserType' }
+        browserVersion: { type: string }
+        deviceName: { type: string }
+        platformVersion: { type: string }
+        automationName: { type: string }
+        appPackage: { type: string }
+        appActivity: { type: string }
+        bundleId: { type: string }
+        appPath: { type: string }
+        headless: { type: boolean }
+        screenResolution: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+    UpdateDeviceProfileCommand:
+      type: object
+      properties:
+        name: { type: string }
+        os: { $ref: '#/components/schemas/OSType' }
+        browser: { $ref: '#/components/schemas/BrowserType' }
+        browserVersion: { type: string }
+        deviceName: { type: string }
+        platformVersion: { type: string }
+        automationName: { type: string }
+        appPackage: { type: string }
+        appActivity: { type: string }
+        bundleId: { type: string }
+        appPath: { type: string }
+        headless: { type: boolean }
+        screenResolution: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+    DeviceProfileResponse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        organizationId: { type: string }
+        platform: { $ref: '#/components/schemas/PlatformType' }
+        os: { $ref: '#/components/schemas/OSType' }
+        browser: { $ref: '#/components/schemas/BrowserType' }
+        browserVersion: { type: string }
+        deviceName: { type: string }
+        platformVersion: { type: string }
+        automationName: { type: string }
+        appPackage: { type: string }
+        appActivity: { type: string }
+        bundleId: { type: string }
+        appPath: { type: string }
+        headless: { type: boolean }
+        screenResolution: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DeviceSlotStatus:
+      type: string
+      enum: [AVAILABLE, ALLOCATED, OFFLINE]
+    CreateDeviceSlotCommand:
+      type: object
+      required: [name, deviceProfileId, remoteUrl]
+      properties:
+        name: { type: string }
+        deviceProfileId: { type: string }
+        remoteUrl: { type: string }
+        udid: { type: string }
+    UpdateDeviceSlotCommand:
+      type: object
+      properties:
+        name: { type: string }
+        remoteUrl: { type: string }
+        udid: { type: string }
+    DeviceSlotResponse:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        deviceProfileId: { type: string }
+        remoteUrl: { type: string }
+        udid: { type: string }
+        status: { $ref: '#/components/schemas/DeviceSlotStatus' }
+        allocatedRunId: { type: string }
+        allocatedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateExecutionTargetCommand:
+      type: object
+      required: [projectId, deviceProfileId, name]
+      properties:
+        projectId: { type: string }
+        deviceProfileId: { type: string }
+        name: { type: string }
+        remoteUrl: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+    UpdateExecutionTargetCommand:
+      type: object
+      properties:
+        name: { type: string }
+        remoteUrl: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+    ExecutionTargetResponse:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        deviceProfileId: { type: string }
+        name: { type: string }
+        remoteUrl: { type: string }
+        extraCapabilities:
+          type: object
+          additionalProperties: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateScheduleCommand:
+      type: object
+      required: [projectId, name, cron, zoneId, testSuiteId, environmentId, executionTargetId]
+      properties:
+        projectId: { type: string }
+        name: { type: string }
+        cron: { type: string }
+        zoneId: { type: string }
+        testSuiteId: { type: string }
+        environmentId: { type: string }
+        executionTargetId: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+    UpdateScheduleCommand:
+      type: object
+      properties:
+        name: { type: string }
+        cron: { type: string }
+        zoneId: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+        active: { type: boolean }
+    ScheduleResponse:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        name: { type: string }
+        cron: { type: string }
+        zoneId: { type: string }
+        testSuiteId: { type: string }
+        environmentId: { type: string }
+        executionTargetId: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+        active: { type: boolean }
+        lastFiredAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        createdBy: { type: string }
+    TriggerRunCommand:
+      type: object
+      required: [testSuiteId, executionTargetId, environmentId]
+      properties:
+        testSuiteId: { type: string }
+        executionTargetId: { type: string }
+        environmentId: { type: string }
+        priority: { $ref: '#/components/schemas/Priority' }
+    TriggerRunResponse:
+      type: object
+      properties:
+        runId: { type: string }
+        status: { type: string }
+    TestRunResponse:
+      type: object
+      properties:
+        id: { type: string }
+        testSuiteId: { type: string }
+        executionTargetId: { type: string }
+        environmentId: { type: string }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        triggerKind: { $ref: '#/components/schemas/TriggerKind' }
+        triggeredBy: { type: string }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        durationMs: { type: integer, format: int64 }
+        totalCases: { type: integer }
+        passedCases: { type: integer, format: int64 }
+        failedCases: { type: integer, format: int64 }
+        caseResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestCaseResultResponse'
+    TestCaseResultResponse:
+      type: object
+      properties:
+        id: { type: string }
+        testCaseId: { type: string }
+        definitionVersion: { type: integer }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        durationMs: { type: integer, format: int64 }
+        errorMessage: { type: string }
+        stepResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestStepResultResponse'
+    TestStepResultResponse:
+      type: object
+      properties:
+        testStepId: { type: string }
+        orderIndex: { type: integer }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        durationMs: { type: integer, format: int64 }
+        actualValue: { type: string }
+        expectedValue: { type: string }
+        errorMessage: { type: string }
+        screenshotPath: { type: string }
+    ArtifactUrlResponse:
+      type: object
+      properties:
+        key: { type: string }
+        url: { type: string }
+        expiresAt: { type: string, format: date-time }
