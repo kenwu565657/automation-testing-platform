@@ -1,0 +1,1912 @@
+{
+  "info": {
+    "name": "Platform API v1",
+    "description": "STALE \u2014 predates the RestfulApiResponse envelope migration: bodied 2xx responses are now wrapped in { code, message, data, traceId }; the payload field names are unchanged. 204s stay bodyless. Regenerate against a running admin service.\nGateway base {{baseUrl}} = http://localhost:8080/api/admin. Send Authorization: Bearer {{accessToken}} after login. Create user, login, and refresh are open.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/admin"
+    },
+    {
+      "key": "userId",
+      "value": "qa"
+    },
+    {
+      "key": "organizationId",
+      "value": ""
+    },
+    {
+      "key": "orgMembershipId",
+      "value": ""
+    },
+    {
+      "key": "projectId",
+      "value": ""
+    },
+    {
+      "key": "userRecordId",
+      "value": ""
+    },
+    {
+      "key": "testCaseId",
+      "value": ""
+    },
+    {
+      "key": "testSuiteId",
+      "value": ""
+    },
+    {
+      "key": "environmentId",
+      "value": ""
+    },
+    {
+      "key": "deviceProfileId",
+      "value": ""
+    },
+    {
+      "key": "executionTargetId",
+      "value": ""
+    },
+    {
+      "key": "scheduleId",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "membershipId",
+      "value": ""
+    },
+    {
+      "key": "pageObjectId",
+      "value": ""
+    },
+    {
+      "key": "roleTemplateId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "  pm.collectionVariables.set(\"refreshToken\", body.refreshToken);",
+                  "  pm.collectionVariables.set(\"userRecordId\", body.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@example.com\",\n  \"password\": \"secret12\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "  pm.collectionVariables.set(\"refreshToken\", body.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI settings",
+      "item": [
+        {
+          "name": "Get AI settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai-settings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save AI settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai-settings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"model\": \"gpt-4.1-mini\",\n  \"apiKey\": \"sk-your-key\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Revert AI settings",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ai-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai-settings"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@example.com\",\n  \"displayName\": \"QA\",\n  \"password\": \"secret12\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/user/{{userRecordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "{{userRecordId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user by email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/user?email=qa@example.com",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "qa@example.com"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/user/{{userRecordId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "{{userRecordId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"QA Lead\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organization",
+      "item": [
+        {
+          "name": "Create organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set(\"organizationId\", pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme\",\n  \"description\": \"QA org\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List organizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get organization",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization/{{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization",
+                "{{organizationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update organization",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization/{{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization",
+                "{{organizationId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete organization",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization/{{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization",
+                "{{organizationId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OrganizationMembership",
+      "item": [
+        {
+          "name": "Grant organization membership",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization-membership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization-membership"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userRecordId}}\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"roleTemplateId\": \"{{roleTemplateId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List organization memberships",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization-membership?organizationId={{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization-membership"
+              ],
+              "query": [
+                {
+                  "key": "organizationId",
+                  "value": "{{organizationId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Revoke organization membership",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/organization-membership/{{orgMembershipId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "organization-membership",
+                "{{orgMembershipId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project",
+      "item": [
+        {
+          "name": "Create project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/project",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "project"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Shop\",\n  \"description\": \"Stage 1 demo\",\n  \"organizationId\": \"{{organizationId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/project",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "project"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/project/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "project",
+                "{{projectId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/project/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "project",
+                "{{projectId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Shop Staging\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/project/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "project",
+                "{{projectId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RoleTemplate",
+      "item": [
+        {
+          "name": "List role templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/role-template?organizationId={{organizationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "role-template"
+              ],
+              "query": [
+                {
+                  "key": "organizationId",
+                  "value": "{{organizationId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create role template",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/role-template",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "role-template"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"name\": \"QA Runner\",\n  \"actions\": [\"CATALOG_READ\", \"RUN_READ\", \"RUN_TRIGGER\", \"RUN_CANCEL\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get role template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/role-template/{{roleTemplateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "role-template",
+                "{{roleTemplateId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update role template",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/role-template/{{roleTemplateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "role-template",
+                "{{roleTemplateId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actions\": [\"CATALOG_READ\", \"CATALOG_WRITE\"]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test case",
+      "item": [
+        {
+          "name": "Generate test case draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case",
+                "generate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"prompt\": \"API health check against /health\",\n  \"sourceCaseIds\": [],\n  \"testType\": \"API\",\n  \"authoringStyle\": \"SIMPLE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Import catalog draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case",
+                "import"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"source\": \"SELENIUM\",\n  \"testType\": \"WEB_E2E\",\n  \"authoringStyle\": \"SIMPLE\",\n  \"files\": [\n    {\n      \"path\": \"LoginPage.java\",\n      \"content\": \"public class LoginPage {\\n  @FindBy(id = \\\"username\\\")\\n  private WebElement username;\\n}\\n\"\n    },\n    {\n      \"path\": \"LoginTest.java\",\n      \"content\": \"public class LoginTest {\\n  @Test\\n  public void loginSuccessfully() {\\n    driver.get(\\\"https://app.example.com/login\\\");\\n    loginPage.username.sendKeys(\\\"ada\\\");\\n  }\\n}\\n\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create test case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"name\": \"Login\",\n  \"description\": \"Happy path\",\n  \"testType\": \"API\",\n  \"authoringStyle\": \"SIMPLE\",\n  \"priority\": \"HIGH\",\n  \"testSuiteId\": \"{{testSuiteId}}\",\n  \"tagSet\": [\n    \"smoke\"\n  ],\n  \"timeoutSeconds\": 60,\n  \"retryCount\": 0,\n  \"testStepList\": [\n    {\n      \"orderIndex\": 1,\n      \"name\": \"GET health\",\n      \"actionType\": \"HTTP_REQUEST\",\n      \"actionParameters\": {\n        \"method\": \"GET\",\n        \"path\": \"/health\"\n      }\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get test case",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case/{{testCaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case",
+                "{{testCaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by suite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case?testSuiteId={{testSuiteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case"
+              ],
+              "query": [
+                {
+                  "key": "testSuiteId",
+                  "value": "{{testSuiteId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by tag",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case?tag=smoke",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case"
+              ],
+              "query": [
+                {
+                  "key": "tag",
+                  "value": "smoke"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case?testType=API",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case"
+              ],
+              "query": [
+                {
+                  "key": "testType",
+                  "value": "API"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update test case",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-case/{{testCaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-case",
+                "{{testCaseId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated\",\n  \"tagSet\": [\n    \"smoke\",\n    \"reg\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Test suite",
+      "item": [
+        {
+          "name": "Create test suite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-suite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-suite"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Smoke\",\n  \"projectId\": \"{{projectId}}\",\n  \"testCaseIds\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Get test suite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-suite/{{testSuiteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-suite",
+                "{{testSuiteId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-suite?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-suite"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update test suite",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-suite/{{testSuiteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-suite",
+                "{{testSuiteId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testCaseIds\": [\n    \"{{testCaseId}}\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Page object",
+      "item": [
+        {
+          "name": "Create page object",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/page-object",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page-object"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"name\": \"LoginForm\",\n  \"pageUrl\": \"/login\",\n  \"elements\": [\n    {\n      \"name\": \"submit\",\n      \"locators\": [\n        {\n          \"platformType\": \"WEB_DESKTOP\",\n          \"locatorStrategy\": \"CSS_SELECTOR\",\n          \"locatorValue\": \"button[type=submit]\"\n        }\n      ]\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "List page objects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/page-object?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page-object"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get page object",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/page-object/{{pageObjectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page-object",
+                "{{pageObjectId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update page object",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/page-object/{{pageObjectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page-object",
+                "{{pageObjectId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"elements\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Apply locator heal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/page-object/{{pageObjectId}}/heal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page-object",
+                "{{pageObjectId}}",
+                "heal"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"elementId\": \"{{pageElementId}}\",\n  \"platformType\": \"WEB_DESKTOP\",\n  \"locatorStrategy\": \"CSS_SELECTOR\",\n  \"locatorValue\": \"#go\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visual baseline",
+      "item": []
+    },
+    {
+      "name": "Environment",
+      "item": [
+        {
+          "name": "Create environment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/environment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "environment"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"name\": \"staging\",\n  \"variables\": {\"baseUrl\": \"https://stg.shop.example\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "List environments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/environment?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "environment"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get environment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/environment/{{environmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "environment",
+                "{{environmentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update environment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/environment/{{environmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "environment",
+                "{{environmentId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\"baseUrl\": \"https://stg.shop.example\"}\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device profile",
+      "item": [
+        {
+          "name": "Create device profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"chrome-desktop\",\n  \"platform\": \"WEB_DESKTOP\",\n  \"browser\": \"CHROME\",\n  \"headless\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "List device profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List by platform",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-profile?platform=WEB_DESKTOP",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-profile"
+              ],
+              "query": [
+                {
+                  "key": "platform",
+                  "value": "WEB_DESKTOP"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get device profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-profile/{{deviceProfileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-profile",
+                "{{deviceProfileId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update device profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-profile/{{deviceProfileId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-profile",
+                "{{deviceProfileId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headless\": false\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device slot",
+      "item": [
+        {
+          "name": "Create device slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-slot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-slot"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"pixel-1\",\n  \"deviceProfileId\": \"{{deviceProfileId}}\",\n  \"remoteUrl\": \"http://appium:4723\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List device slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-slot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-slot"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Release device slot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/device-slot/{{deviceSlotId}}/release",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "device-slot",
+                "{{deviceSlotId}}",
+                "release"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Execution target",
+      "item": [
+        {
+          "name": "Create execution target",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/execution-target",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution-target"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"deviceProfileId\": \"{{deviceProfileId}}\",\n  \"name\": \"local-appium\",\n  \"remoteUrl\": \"http://appium:4723\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Appium target",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/execution-target",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution-target"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"deviceProfileId\": \"{{deviceProfileId}}\",\n  \"name\": \"local-appium\",\n  \"remoteUrl\": \"http://appium:4723\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List targets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/execution-target?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution-target"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get target",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/execution-target/{{executionTargetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution-target",
+                "{{executionTargetId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update target",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/execution-target/{{executionTargetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution-target",
+                "{{executionTargetId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remoteUrl\": \"http://localhost:4444\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "item": [
+        {
+          "name": "Create schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"name\": \"Nightly\",\n  \"cron\": \"0 0 9 * * ?\",\n  \"zoneId\": \"Asia/Taipei\",\n  \"testSuiteId\": \"{{testSuiteId}}\",\n  \"environmentId\": \"{{environmentId}}\",\n  \"executionTargetId\": \"{{executionTargetId}}\",\n  \"priority\": \"HIGH\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List schedules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schedule?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                "{{scheduleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                "{{scheduleId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/schedule/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "schedule",
+                "{{scheduleId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run",
+      "item": [
+        {
+          "name": "Trigger run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/run/trigger",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution",
+                "trigger"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testSuiteId\": \"{{testSuiteId}}\",\n  \"executionTargetId\": \"{{executionTargetId}}\",\n  \"environmentId\": \"{{environmentId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/run?testSuiteId={{testSuiteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution"
+              ],
+              "query": [
+                {
+                  "key": "testSuiteId",
+                  "value": "{{testSuiteId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/run/{{runId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution",
+                "{{runId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/run/{{runId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution",
+                "{{runId}}",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Presign artifact",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/run/{{runId}}/artifact?key=runs/{{runId}}/screenshot.png",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "execution",
+                "{{runId}}",
+                "artifact"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "runs/{{runId}}/screenshot.png"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}
