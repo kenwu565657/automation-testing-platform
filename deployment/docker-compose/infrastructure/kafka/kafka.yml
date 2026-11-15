@@ -38,3 +38,16 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  kafka-init:
+    image: apache/kafka:${KAFKA_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-kafka-init
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/init/kafka-topics.sh"]
+    volumes:
+      - ./kafka-topics.sh:/init/kafka-topics.sh:ro
+    networks:
+      - platform-network

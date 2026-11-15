@@ -2,7 +2,7 @@
 #  Master compose — includes all sub-files.
 #
 #  Usage:
-#    docker compose up -d                        (infra only)
+#    docker compose up -d                        (infra + idempotent data init)
 #    docker compose --profile services up -d     (infra + services)
 #    docker compose --profile tools up -d        (infra + tools)
 #    docker compose --profile services --profile tools up -d  (all)

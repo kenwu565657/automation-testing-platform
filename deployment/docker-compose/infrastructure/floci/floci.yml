@@ -20,3 +20,19 @@ services:
       timeout: 5s
       retries: 8
       start_period: 15s
+
+  s3-init:
+    image: curlimages/curl:8.11.1
+    container_name: ${COMPOSE_PROJECT_NAME}-s3-init
+    restart: "no"
+    user: "0:0"
+    depends_on:
+      floci:
+        condition: service_healthy
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-valdifly-artifacts}
+    entrypoint: ["/bin/sh", "/init/s3.sh"]
+    volumes:
+      - ./s3.sh:/init/s3.sh:ro
+    networks:
+      - platform-network

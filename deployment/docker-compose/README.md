@@ -81,12 +81,7 @@ export AWS_SECRET_ACCESS_KEY=test
 
 From another Compose service the host is `http://floci:4566`.
 
-Create the artifacts bucket once:
-
-```bash
-aws --endpoint-url http://localhost:4566 s3 mb s3://valdifly-artifacts
-aws --endpoint-url http://localhost:4566 s3 ls
-```
+`docker compose up` also runs a one-shot init defined next to each store. Postgres extensions come from `postgres-init.sql` on a new data volume, and Flyway in the Postgres file applies `shared/java/infrastructure` migrations. The Elasticsearch file creates `test-reports`, the Floci file creates the `valdifly-artifacts` bucket, and the Kafka file creates the event topics. Each init leaves an existing resource in place.
 
 Production uses real S3 and the same bucket naming. Do not add MinIO or LocalStack next to Floci.
 

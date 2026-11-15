@@ -21,3 +21,18 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  elasticsearch-init:
+    image: curlimages/curl:8.11.1
+    container_name: ${COMPOSE_PROJECT_NAME}-elasticsearch-init
+    restart: "no"
+    user: "0:0"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/init/elasticsearch.sh"]
+    volumes:
+      - ./elasticsearch.sh:/init/elasticsearch.sh:ro
+      - ../../../../platform-report/src/main/resources/elasticsearch/test-reports.json:/mapping/test-reports.json:ro
+    networks:
+      - platform-network
