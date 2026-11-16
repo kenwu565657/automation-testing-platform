@@ -206,3 +206,9 @@ npm run dev:seed -- --delete # delete seed data
 | Organization | Dev Seed |
 | Project | Playground |
 | Environment | Local, with baseUrl set to http://localhost:3000 |
+
+## Development tools
+```shell
+cd deployment/docker-compose
+docker compose --profile tools up -d
+```
